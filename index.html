@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BZF Shedder</title>
+<title>Ben Shedder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
@@ -37,6 +37,8 @@ button{font-family:inherit;cursor:pointer;}
 .slot{display:flex;gap:8px;align-items:center;margin-top:5px;}
 .slot .setup-input{margin-top:0;}
 .slot .tag{font-size:.75rem;color:var(--text3);min-width:38px;text-align:right;}
+.online-row{display:flex;gap:10px;margin-top:10px;} .btn-online{flex:1;padding:11px;background:var(--surface,#fff);color:var(--gold2);border:2px solid var(--gold2);border-radius:10px;font-family:'Cinzel',serif;font-weight:700;letter-spacing:2px;font-size:.85rem;}
+.roomcode{font:900 2.2rem 'Cinzel',serif;letter-spacing:10px;text-align:center;color:var(--gold2);margin:6px 0;}
 .btn-start{width:100%;margin-top:22px;padding:14px;background:var(--gold2);color:#fff;border:none;border-radius:10px;font-family:'Cinzel',serif;font-weight:900;letter-spacing:3px;font-size:1.05rem;}
 .help-link{display:block;margin:0 auto;background:none;border:none;color:var(--text3);font-size:.85rem;text-decoration:underline;}
 
@@ -120,24 +122,50 @@ table.sum{width:100%;border-collapse:collapse;font-size:.72rem;} table.sum th,ta
 #peekbar.on{display:block;}
 .mopt.hrow{display:flex;align-items:center;gap:10px;padding:8px 10px;} .mopt.hrow .strip{flex:0 0 auto;} .mopt.hrow .who{flex:1;font-size:.92rem;line-height:1.2;} .hsec{font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:1.5px;color:var(--text2);margin:12px 0 2px;}
 .legend{font-size:.78rem;color:var(--text3);margin-top:6px;}
+
+/* PHONE / SHORT-WINDOW LAYOUT: compact bars, pinned top-set banner, slim pinned strip for your own sets, compact controls.
+   Larger screens keep the layout above unchanged. */
+.ttl .ts{display:none;}
+@media (max-width:520px), (max-height:620px){
+  #topbar{height:36px;padding:3px 8px;gap:6px;}
+  #topbar .ttl{font-size:.76rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+  .ttl .tl{display:none;} .ttl .ts{display:inline;}
+  .iconbtn{padding:3px 8px;font-size:.78rem;}
+  #ticker{padding:3px 8px;min-height:0;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #ticker .tk:not(:last-child){display:none;}
+  #banner{position:sticky;top:36px;z-index:5;padding:4px 8px;font-size:.85rem;line-height:1.2;}
+  #table{padding:4px 6px;gap:4px;}
+  #table:has(.opp:nth-child(3)){display:grid;grid-template-columns:1fr 1fr;align-content:start;}
+  .opp{padding:3px 6px;border-radius:8px;min-width:0;}
+  .ph{gap:4px;font-size:.85rem;} .ph .nm{font-size:.76rem;} .ph .cnt{font-size:.72rem;} .badge{font-size:.62rem;padding:0 5px;}
+  .melds{margin-top:3px;gap:4px;zoom:.72;}
+  .mine{position:sticky;bottom:var(--dockh,120px);z-index:3;margin:0 6px 4px;padding:3px 6px;border-radius:8px;display:flex;align-items:center;gap:6px;}
+  .mine .ph{flex:0 0 auto;flex-wrap:nowrap;} .mine .melds{flex:1 1 auto;flex-wrap:nowrap;overflow-x:auto;margin-top:0;min-height:0;}
+  #dock{padding:4px 6px calc(6px + env(safe-area-inset-bottom));}
+  #hand{padding:10px 4px 3px;} #hand .card{--ch:60px;} .card.sel{transform:translateY(-8px);}
+  #hint{font-size:.78rem;margin-top:2px;min-height:0;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  #hint:empty{display:none;}
+  #actions{gap:4px;margin-top:4px;}
+  .abtn{flex:1 1 68px;min-width:0;padding:8px 4px;font-size:.76rem;letter-spacing:.3px;}
+}
 </style>
 </head>
 <body>
 
 <div id="setup-screen" class="screen active">
   <div class="setup-box">
-    <div class="game-title">BZF SHEDDER</div>
+    <div class="game-title">BEN SHEDDER</div>
     <div class="game-subtitle">A BZF DECK CARD GAME · WORKING TITLE</div>
-    <div class="version-tag">v1.27 · local play against AI · online comes next</div>
+    <div class="version-tag">v1.53 · local and online play · AI fills empty seats</div>
     <button class="help-link" onclick="UI.help()">How to play</button>
 
     <div class="setup-row"><span class="setup-label">GAME MODE</span>
       <div class="btn-group">
         <button class="btn-opt sel">Local</button>
-        <button class="btn-opt" disabled title="Next build">Host Online</button>
-        <button class="btn-opt" disabled title="Next build">Join Online</button>
+        <button class="btn-opt" id="btn-host-online" onclick="UI.hostOnline()">Host Online</button>
+        <button class="btn-opt" id="btn-join-online" onclick="UI.joinOnline()">Join Online</button>
       </div>
-      <div class="vp-hint">Online play (PeerJS rooms, as in Ben Rummy) is the next build.</div>
+      <div class="vp-hint">Host Online opens a room with a 4-letter code using the settings below; Join Online enters a friend's code. Empty seats are played by AI. Local is the usual single-device game.</div>
     </div>
 
     <div class="setup-row"><span class="setup-label">NUMBER OF PLAYERS</span>
@@ -159,26 +187,38 @@ table.sum{width:100%;border-collapse:collapse;font-size:.72rem;} table.sum th,ta
 
     <div class="setup-row"><span class="setup-label">DUPLICATE CARDS</span>
       <div class="btn-group" id="dup-group">
-        <button class="btn-opt" data-v="0">Off · 15-card hands</button><button class="btn-opt sel" data-v="1">On · 20-card hands</button></div></div>
+        <button class="btn-opt sel" data-v="0">None</button><button class="btn-opt" data-v="1">1 (5, 8, 11)</button><button class="btn-opt" data-v="2">2 (5, 8)</button><button class="btn-opt" data-v="3">3 (A, 2, 9)</button><button class="btn-opt" data-v="4">4 (A, 2)</button></div>
+      <div class="vp-hint" id="dup-hint"></div></div>
 
     <div class="setup-row"><span class="setup-label">TEAM ASSIGNMENT</span>
       <div class="btn-group" id="ft-group">
         <button class="btn-opt sel" data-v="0">Reassign Each Hand</button><button class="btn-opt" data-v="1">Freeze at Start</button><button class="btn-opt" data-v="2">All Solo</button></div>
       <div class="vp-hint">All Solo: every player is their own team. Everyone's Arrow is pooled together across the whole table, and the full pool is shared in full by every player who goes out that hand — if you don't go out, you get none of it.</div></div>
 
-    <div class="setup-row"><span class="setup-label">MAJOR ARCANA</span>
-      <div class="btn-group"><button class="btn-opt sel">Off</button><button class="btn-opt" disabled>On</button></div>
-      <div class="vp-hint">Disabled in this version. The Majors are specified in a later pass.</div></div>
+    <div class="setup-row"><span class="setup-label">HAND CARD ORDER</span>
+      <div class="btn-group" id="ho-group">
+        <button class="btn-opt" data-v="frozen">Frozen</button><button class="btn-opt" data-v="once">1 Time Reorder</button><button class="btn-opt sel" data-v="free">Free Order</button></div>
+      <div class="vp-hint"><b>Frozen:</b> hands stay in dealt order and you can only play cards that sit next to each other. <b>1 Time Reorder (trial):</b> automatically sorts one human player's starting hand to group bombs and other strong sets together, using this game's own set-type options; only applies with exactly one human player at the table. The hand is then frozen. <b>Free Order:</b> every hand is kept sorted by rank (suits Hearts, Swords, Diamonds, Coins, Moon, Sun; jokers at the right end) and you can select any cards in your hand, not only adjacent ones. Applies to all seats, including AI.</div></div>
 
-    <div class="setup-row"><span class="setup-label">SORTED INITIAL HAND <span style="font-weight:400;letter-spacing:0;color:var(--text3)">(TRIAL)</span></span>
-      <div class="btn-group" id="sh-group">
+    <div class="setup-row"><span class="setup-label">VP SCORING</span>
+      <div class="btn-group" id="sc-group">
+        <button class="btn-opt sel" data-v="bzf">BZF</button><button class="btn-opt" data-v="tokoh">TP</button><button class="btn-opt" data-v="both">BZF + TP</button><button class="btn-opt" data-v="none">None</button></div>
+      <div class="vp-hint"><b>BZF:</b> card VP scores Star, Arrow and Radioactive. <b>TP:</b> card VP scores Tokoh Points only. <b>BZF + TP:</b> Star, Arrow, Radioactive and TP all score. <b>None:</b> no card VP at all; instead each player scores +100 / +75 / +50 for going out 1st / 2nd / 3rd in a hand, and the owner of the top set banks 5 VP for every card still on their tableau when a trick is scored. No nothing-on-table penalty in this mode. Team and solo bonuses and the max-size bomb bonus apply in every mode.</div></div>
+
+    <div class="setup-row"><span class="setup-label">STRAIGHTS</span>
+      <div class="btn-group" id="st-group">
+        <button class="btn-opt" data-v="high">High</button><button class="btn-opt sel" data-v="low">Low</button></div>
+      <div class="vp-hint"><b>Low (default):</b> among straights, running pairs and triples, and their flush bombs, the lower starting rank wins (2–5 beats 3–6). <b>High:</b> the higher starting rank wins (3–6 beats 2–5). Full houses and groups are unchanged.</div></div>
+
+    <div class="setup-row"><span class="setup-label">MAJOR ARCANA <span style="font-weight:400;letter-spacing:0;color:var(--text3)">(NEW)</span></span>
+      <div class="btn-group" id="ma-group">
         <button class="btn-opt sel" data-v="0">Off</button><button class="btn-opt" data-v="1">On</button></div>
-      <div class="vp-hint">Trial feature: automatically sorts one human player's starting hand to group bombs and other strong sets together, using this game's own set-type options. Only applies with exactly one human player at the table; has no effect otherwise. Your hand is still fixed once sorted — you can only play cards that sit next to each other, as usual.</div></div>
+      <div class="vp-hint"><b>On:</b> before each hand the table shows 2 Major cards per player and the lowest-VP player picks first. Your pick sits in your Arcana space (it stays across hands) and you may play one per trick, on your own turn, for an immediate bonus: a suit card pays +5★ per card of that suit on all tableaus, The World +5★ per different suit, The Star doubles all Star VP until the trick ends. Jokers count as any one suit. Used cards are discarded and recycled. <span id="ma-gate" style="display:none"><b>Requires VP Scoring BZF or BZF + TP.</b></span></div></div>
 
     <div class="setup-row"><span class="setup-label">PICK UPS <span style="font-weight:400;letter-spacing:0;color:var(--text3)">(TRIAL)</span></span>
       <div class="btn-group" id="pu-group">
         <button class="btn-opt sel" data-v="0">Off</button><button class="btn-opt" data-v="1">On</button></div>
-      <div class="vp-hint">Trial feature: on your turn, instead of playing or passing, you may Pick Up 1-3 cards from a single meld belonging to another player (never the current top set, and never a meld with 4 or more cards). Picking up counts as passing — once you pass or pick up, you're done for the rest of that trick except for playing a bomb of your own if you have one. Capped at 1 pick-up per player per trick. A wish that forces you to play still overrides this.</div></div>
+      <div class="vp-hint">Trial feature: on your turn, instead of playing or passing, you may Pick Up exactly 1 card from a set belonging to another player (never the current top set, never a bomb, and never a joker card). Picking up counts as passing — it lasts only until someone plays, like any pass. Capped at 1 pick-up per player per trick. A wish that forces you to play still overrides this.</div></div>
 
     <div class="setup-row"><span class="setup-label">TARGET VICTORY POINTS</span>
       <div class="btn-group" id="vp-group">
@@ -210,18 +250,21 @@ table.sum{width:100%;border-collapse:collapse;font-size:.72rem;} table.sum th,ta
    ═══════════════════════════════════════════════════════════════ */
 (function(root){
 const E = {};
-const SUITS = ['Hearts','Swords','Diamonds','Coins','Moon','Sun'];
-const SUIT_ICON = {Hearts:'♥',Swords:'⚔',Diamonds:'♦',Coins:'●',Moon:'☾',Sun:'☀'};
+const SUITS = ['Hearts','Spades','Clubs','Sun','Diamonds','Moon','Crown','Pawn'];   /* play order by player count: 2-4P first four, 5P +Diamonds, 6P +Moon, 7P +Crown, 8P +Pawn; Hearts/Clubs/Sun hold Naga/Garuda/Mulai */
+const SUIT_ICON = {Hearts:'♥',Spades:'♠',Clubs:'♣',Sun:'☀',Diamonds:'♦',Moon:'☾',Crown:'♚',Pawn:'♟'};
 const RSHORT = {1:'A',2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'11',12:'12',13:'13',14:'14'};
 E.SUITS = SUITS; E.SUIT_ICON = SUIT_ICON; E.RSHORT = RSHORT;
 
 /* ── VP flags (BenTokoh values) ── */
-function starVP(c){ if(c.joker==='anjing') return 5; if(c.joker) return 0; return c.rank===1?10:(c.rank===2||c.rank===9||c.rank===11)?5:0; }
-function arrowVP(c){ if(c.joker==='naga') return 25; if(c.joker) return 0; if(c.rank===14) return -10; return (c.rank===2||c.rank===5||c.rank===8)?5:0; }
-function radVP(c){ if(c.joker==='garuda') return -25; if(c.joker) return 0; if(c.rank===12) return -10; return (c.rank===7||c.rank===9)?-5:0; }
-function tpVP(c){ if(c.joker) return 0; return c.rank===4?5:(c.rank===10||c.rank===13)?10:0; }
+/* VP scoring mode (setup): 'bzf' scores Star/Arrow/Radioactive, 'tokoh' scores TP only, 'none' scores no card VP. Every card-VP function below returns 0 for a category the mode does not score, so scoring and every rule that protects scoring cards follow the mode automatically. */
+let VPMODE='bzf';
+E.setVPMode=function(m){ VPMODE=(m==='tokoh'||m==='none'||m==='both')?m:'bzf'; };
+function starVP(c){ if(VPMODE!=='bzf'&&VPMODE!=='both') return 0; if(c.joker==='anjing') return 5; if(c.joker) return 0; return c.rank===1?10:(c.rank===2||c.rank===9||c.rank===11)?5:0; }
+function arrowVP(c){ if(VPMODE!=='bzf'&&VPMODE!=='both') return 0; if(c.joker==='naga') return 25; if(c.joker) return 0; if(c.rank===14) return -10; return (c.rank===2||c.rank===5||c.rank===8)?5:0; }
+function radVP(c){ if(VPMODE!=='bzf'&&VPMODE!=='both') return 0; if(c.joker==='garuda') return -25; if(c.joker) return 0; if(c.rank===12) return -10; return (c.rank===7||c.rank===9)?-5:0; }
+function tpVP(c){ if((VPMODE!=='tokoh'&&VPMODE!=='both') || c.joker) return 0; return c.rank===4?5:(c.rank===10||c.rank===13)?10:0; }
 E.starVP=starVP; E.arrowVP=arrowVP; E.radVP=radVP; E.tpVP=tpVP;
-const isTPCard = c => !c.joker && (c.rank===4||c.rank===10||c.rank===13);
+const isTPCard = c => tpVP(c)>0;
 const isStarCard = c => starVP(c) > 0;
 
 /* ── RNG ── */
@@ -229,11 +272,15 @@ function mulberry(seed){ let a = seed>>>0; return function(){ a |= 0; a = a + 0x
 function shuffle(G,arr){ const a = arr.slice(); for(let i=a.length-1;i>0;i--){ const j = Math.floor(G.rng()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; }
 
 /* ── DECK ── */
+/* Duplicate sets (per suit): D1 = 5,8,11 · D2 = 5,8 · D3 = 1,2,9 · D4 = 1,2. Level k switches on D1..Dk (0 = none; the setup offers 0, 2, 3, 4). */
+const DUP_SETS = [[5,8,11],[5,8],[1,2,9],[1,2]];
+function dupRanks(sets){ const out=[]; (sets||[]).forEach(k=>{ if(k>=1&&k<=4) out.push(...DUP_SETS[k-1]); }); return out; }   /* sets = list of chosen Duplicate sets, any of 1..4 */
+E.dupRanks = dupRanks;
 function buildDeck(G){
   const cards = []; let id = 0;
   for(let s=0;s<G.nSuits;s++){
     for(let r=1;r<=14;r++) cards.push({id:++id,suit:s,rank:r,joker:null,dup:false});
-    if(G.dups) [5,5,8,8,11].forEach(r=>cards.push({id:++id,suit:s,rank:r,joker:null,dup:true}));
+    dupRanks(G.dupSets).forEach(r=>cards.push({id:++id,suit:s,rank:r,joker:null,dup:true}));
   }
   const jk = ['naga','garuda','mulai']; for(let i=0;i<G.nSuits-3;i++) jk.push('anjing');
   jk.forEach(j=>cards.push({id:++id,suit:-1,rank:0,joker:j,dup:false}));
@@ -242,8 +289,8 @@ function buildDeck(G){
 E.buildDeck = buildDeck;
 
 /* ═══ SET DESCRIPTION ═══ */
-const TYPE_ORDER = {single:0,naga:0,anjing:0,aggregate:1,group:2,straight:3,fullhouse:3.5,runpair:4,runtriple:5};
-const KIND_NAME = {single:'Single',naga:'Naga',anjing:'Anjing',aggregate:'Aggregate',group:'Group',straight:'Straight',fullhouse:'Full house',runpair:'Running pair',runtriple:'Running triple'};
+const TYPE_ORDER = {single:0,naga:0,anjing:0,aggregate:1,group:2,straight:3,fullhouse:3.5,runpair:4,runtriple:5,runquad:6};
+const KIND_NAME = {single:'Single',naga:'Naga',anjing:'Anjing',aggregate:'Aggregate',group:'Group',straight:'Straight',fullhouse:'Full house',runpair:'Running pair',runquad:'Running quad',runtriple:'Running triple'};
 function mkD(kind,len,o){ return Object.assign({kind,len,bomb:false,tier:-1,tieKey:0,typeOrder:TYPE_ORDER[kind],rankKey:0,cards:[],garudaAs:null,start:0},o); }
 function sortDesc(cs){ return cs.slice().sort((a,b)=>b.rank-a.rank); }
 function consecutive(ranks){ const s = ranks.slice().sort((a,b)=>a-b); for(let i=1;i<s.length;i++) if(s[i]-s[i-1]!==1) return false; return true; }
@@ -266,17 +313,20 @@ function labelOf(d){
     case 'aggregate': s = 'Aggregate '+d.cards.map(show).join('+')+' = '+d.rankKey; break;
     case 'runpair': s = 'Running pair '+RSHORT[d.start]+'–'+RSHORT[d.start+d.len/2-1]; break;
     case 'runtriple': s = 'Running triple '+RSHORT[d.start]+'–'+RSHORT[d.start+1]; break;
-    case 'fullhouse': s = 'Full house '+RSHORT[d.mainRank]+'×'+(d.len-2)+' + '+RSHORT[d.pairRank]+'×2'; break;
+    case 'runquad': s = 'Running quad '+RSHORT[d.start]+'–'+RSHORT[d.start+1]; break;
+    case 'fullhouse': s = 'Full house '+RSHORT[d.mainRank]+'×'+d.mainN+' + '+RSHORT[d.pairRank]+'×'+d.pairN; break;
     default: s = d.kind;
   }
-  if(d.bomb){ s += ' — BOMB ('+({0:'aggregate',1:'group',1.5:'full house',2:'straight flush',3:'paired flush',4:'triple flush'})[d.tier]+')'; }
+  if(d.bomb){ s += ' — BOMB ('+({0:'aggregate',1:'group',2:'straight flush',2.5:'full house',3:'paired flush',4:'triple flush',5:'quad flush'})[d.tier]+')'; }
   return s;
 }
 
 /* describe(cards, opts): every legal set interpretation of these cards (order-free). */
+/* Straight ranking direction: Low (default) = the lower starting rank wins; High = the higher starting rank wins. Applies to straights, running sets and their flush bombs. */
+const SGN = o => o.stHigh ? 1 : -1;
 E.describe = function(cards, o){
   const res = []; const n = cards.length;
-  if(!n || n>6) return res;
+  if(!n || n>(o.max||6)) return res;   /* o.max = largest set allowed (= number of suits in play) */
   const nat = cards.filter(c=>!c.joker);
   const hasG = cards.some(c=>c.joker==='garuda');
   const hasM = cards.some(c=>c.joker==='mulai');
@@ -316,14 +366,14 @@ E.describe = function(cards, o){
         const suited = nat.every(c=>c.suit===nat[0].suit);
         const bomb = !hasG && n>=4 && suited;
         const ord = (hasG? cards.filter(c=>c.joker!=='garuda').map(c=>({c,r:c.rank})).concat([{c:cards.find(x=>x.joker==='garuda'),r:gAs}]) : cards.map(c=>({c,r:c.rank}))).sort((a,b)=>b.r-a.r).map(x=>x.c);
-        res.push(finalize(mkD('straight',n,{cards:ord,rankKey:-start,start,bomb,tier:bomb?2:-1,tieKey:-start,garudaAs:hasG?gAs:null})));
+        res.push(finalize(mkD('straight',n,{cards:ord,rankKey:SGN(o)*start,start,bomb,tier:bomb?2:-1,tieKey:SGN(o)*start,garudaAs:hasG?gAs:null})));
       };
       if(!hasG){ if(n>=2 && consecutive(ranks)) build(ranks,null); }
       else { for(let x=1;x<=14;x++){ if(ranks.includes(x)) continue; const all = ranks.concat([x]); if(all.length===n && consecutive(all)) build(all,x); } }
     }
   }
   /* RUNNING PAIR / TRIPLE */
-  if(o.d && (n===4||n===6)){
+  if(o.d && (n===4||n===6||n===8)){
     const cnt = {}; nat.forEach(c=>{ cnt[c.rank]=(cnt[c.rank]||0)+1; });
     const tryC = (per,k)=>{
       if(per*k!==n) return;
@@ -342,30 +392,33 @@ E.describe = function(cards, o){
           bomb = sig.every(x=>x===sig[0]) && new Set(bySuit[0]).size===per;
         }
         const ord = cards.slice().sort((a,b)=>{ const ra=a.joker==='garuda'?gAs:a.rank, rb=b.joker==='garuda'?gAs:b.rank; return rb-ra || a.suit-b.suit; });
-        res.push(finalize(mkD(per===2?'runpair':'runtriple',n,{cards:ord,rankKey:-s,start:s,bomb,tier:bomb?(per===2?3:4):-1,tieKey:-s,garudaAs:hasG?gAs:null})));
+        res.push(finalize(mkD(per===2?'runpair':per===3?'runtriple':'runquad',n,{cards:ord,rankKey:SGN(o)*s,start:s,bomb,tier:bomb?(per===2?3:per===3?4:5):-1,tieKey:SGN(o)*s,garudaAs:hasG?gAs:null})));
       }
     };
-    tryC(2,n/2); if(n===6) tryC(3,2);
+    tryC(2,n/2); if(n===6) tryC(3,2); if(n===8) tryC(4,2);   /* 8 cards (8 suits): 2 per rank over 4 ranks, or a running quad (4 per rank over 2 ranks) */
   }
   /* FULL HOUSE: triple + pair (5 cards) or quad + pair (6 cards); a bomb if no group repeats a suit (never with Garuda) */
-  if(o.e && (n===5||n===6)){
+  if(o.e && n>=5 && n<=8){
     const cnt = {}; nat.forEach(c=>{ (cnt[c.rank]=cnt[c.rank]||[]).push(c); });
     const ranks = Object.keys(cnt).map(Number);
     if(ranks.length===2){
-      const want = n===5 ? [3,2] : [4,2];
-      const tryAssign = bump=>{
+      const SHAPES = {5:[[3,2]],6:[[4,2]],7:[[4,3],[5,2]],8:[[5,3]]};   /* big group + small group; 7-card shapes need 7 suits, the 8-card one 8 */
+      const tryAssign = (bump,want)=>{
         const c = {}; ranks.forEach(r=>{ c[r] = cnt[r].length + (bump===r?1:0); });
         const sorted = ranks.slice().sort((a,b)=>c[b]-c[a]||b-a);
         if(c[sorted[0]]!==want[0] || c[sorted[1]]!==want[1]) return;
         const main = sorted[0], pr = sorted[1];
         const distinct = arr => new Set(arr.map(x=>x.suit)).size===arr.length;
-        const bomb = !hasG && distinct(cnt[main]) && distinct(cnt[pr]);
+        const noOverlap = new Set(cnt[main].map(x=>x.suit).concat(cnt[pr].map(x=>x.suit))).size===cnt[main].length+cnt[pr].length;
+        const bomb = !hasG && distinct(cnt[main]) && distinct(cnt[pr]) && noOverlap;
         const rk = x => x.joker==='garuda' ? bump : x.rank;
         const ord = cards.slice().sort((a,b)=>{ const ma = rk(a)===main?0:1, mb = rk(b)===main?0:1; return ma-mb || a.suit-b.suit; });
-        res.push(finalize(mkD('fullhouse',n,{cards:ord,rankKey:main,start:0,bomb,tier:bomb?1.5:-1,tieKey:main,garudaAs:hasG?bump:null,mainRank:main,pairRank:pr})));
+        res.push(finalize(mkD('fullhouse',n,{cards:ord,rankKey:want[0]*100+main,start:0,bomb,tier:bomb?2.5:-1,tieKey:want[0]*100+main,garudaAs:hasG?bump:null,mainRank:main,pairRank:pr,mainN:want[0],pairN:want[1]})));
       };
-      if(!hasG){ if(nat.length===n) tryAssign(null); }
-      else if(nat.length===n-1){ ranks.forEach(r=>tryAssign(r)); }
+      SHAPES[n].forEach(want=>{
+        if(!hasG){ if(nat.length===n) tryAssign(null,want); }
+        else if(nat.length===n-1){ ranks.forEach(r=>tryAssign(r,want)); }
+      });
     }
   }
   return res;
@@ -376,7 +429,7 @@ E.beats = function(a,b){
   if(!b) return true;
   if(a.kind==='anjing') return false;
   if(b.kind==='naga') return !!a.bomb;
-  if(a.kind==='naga') return !b.bomb && (b.kind==='single'||b.kind==='aggregate');
+  if(a.kind==='naga') return !b.bomb;   /* Naga is only ever played as a singleton, but it tops every non-bomb meld, any type or size */
   if(!!a.bomb!==!!b.bomb) return !!a.bomb;
   if(a.bomb){ if(a.len!==b.len) return a.len>b.len; if(a.tier!==b.tier) return a.tier>b.tier; return a.tieKey>b.tieKey; }
   if(a.len!==b.len) return a.len>b.len;
@@ -385,51 +438,87 @@ E.beats = function(a,b){
 };
 
 /* ═══ GAME SETUP ═══ */
-function zeroHV(){ return {star:0,arrow:0,tp:0,rad:0,diff:0,bonus:0,team:0,bomb:0}; }
-function hvTotal(h){ return h.star+h.arrow+h.tp+h.rad+h.diff+h.bonus+(h.team||0)+h.bomb; }
+function zeroHV(){ return {star:0,arrow:0,tp:0,rad:0,diff:0,bonus:0,team:0,bomb:0,place:0,decl:0,bank:0}; }
+function hvTotal(h){ return h.star+h.arrow+h.tp+h.rad+h.diff+h.bonus+(h.team||0)+h.bomb+(h.place||0)+(h.decl||0)+(h.bank||0); }
 E.hvTotal = hvTotal;
-const NEED_OUT = {2:1,3:2,4:3,5:3,6:3};
+const NEED_OUT = {2:1,3:2,4:3,5:3,6:3,7:3,8:3};
 
 E.newGame = function(cfg){
+  E.setVPMode(cfg.vpMode);
   const n = cfg.n;
-  const G = { n, opts:Object.assign({a:true,b:true,c:true,d:false,e:false},cfg.opts||{}), dups:!!cfg.dups,
-    target:cfg.target||700, freeze:!!cfg.freezeTeams, allSolo:!!cfg.allSolo, sortedHand:!!cfg.sortedHand, pickups:!!cfg.pickups, nSuits:n<=4?4:n, handNum:0,
-    rng:mulberry(cfg.seed!=null?cfg.seed:(Date.now()%2147483647)), players:[], log:[], phase:'setup', pending:null, mid:0, over:false, winner:null, needOut:NEED_OUT[n] };
-  for(let i=0;i<n;i++) G.players.push({seat:i,name:(cfg.names&&cfg.names[i])||('Player '+(i+1)),human:!!(cfg.human&&cfg.human[i]),
+  const HO = ['frozen','once','free'].includes(cfg.handOrder) ? cfg.handOrder : (cfg.sortedHand ? 'once' : 'frozen');
+  const G = { n, opts:Object.assign({a:true,b:true,c:true,d:false,e:false},cfg.opts||{},{max:(n<=4?4:n),stHigh:cfg.straights==='high'}), dupSets:(Array.isArray(cfg.dupSets)?cfg.dupSets:(cfg.dupLevel>0?[1,2,3,4].slice(0,cfg.dupLevel):[])).map(Number).filter((k,i,a)=>k>=1&&k<=4&&a.indexOf(k)===i).sort(), dups:false,
+    target:cfg.target||700, freeze:!!cfg.freezeTeams, allSolo:!!cfg.allSolo, handOrder:HO, sortedHand:HO==='once', pickups:!!cfg.pickups, vpMode:(cfg.vpMode==='tokoh'||cfg.vpMode==='none'||cfg.vpMode==='both')?cfg.vpMode:'bzf', nSuits:n<=4?4:n, handNum:0,
+    rng:mulberry(cfg.seed!=null?cfg.seed:(Date.now()%2147483647)), maOn:!!cfg.majors&&(cfg.vpMode==null||cfg.vpMode==='bzf'||cfg.vpMode==='both'), players:[], log:[], phase:'setup', pending:null, mid:0, over:false, winner:null, needOut:NEED_OUT[n] };
+  for(let i=0;i<n;i++) G.players.push({seat:i,name:(cfg.names&&cfg.names[i])||('Player '+(i+1)),free:HO==='free', human:!!(cfg.human&&cfg.human[i]),
     level:(cfg.levels&&cfg.levels[i])||cfg.level||'medium',total:0,hand:[],hands:[],declined:[],tableau:[],out:false,passed:false,team:0,solo:false,hv:zeroHV(),lastHV:zeroHV()});
+  if(G.maOn) initMA(G);
   return G;
 };
 function log(G,msg,cls){ G.log.push({msg,cls:cls||''}); if(G.log.length>400) G.log.shift(); }
 E.log = log;
 
-const SOLO_COUNT = {3:1,4:1,5:1,6:2};
+const SOLO_COUNT = {3:1,4:2,5:1,6:2,7:1,8:2};
+/* Team layouts.
+   Hand 1 (no solos):  3P = one team of all three · 4P = two teams of 2 (alternating seats) ·
+                       5P = a team of 2 containing the Mulai holder (partner drawn at random) + a team of 3 ·
+                       6P = two teams of 3 (alternating seats).
+   Hand 2+ (unless teams are frozen): the top scorers become solos (3P 1, 4P 2, 5P 1, 6P 2); everyone else is ranked
+                       by VP and, where there are two teams, best pairs with worst and second-best with second-worst
+                       (5P: 2nd highest + lowest vs 3rd + 4th highest; 6P: 3rd highest + lowest vs 4th + 5th highest).
+                       3P and 4P leave one team of the remaining players. Ties are broken at random.
+   2P: each player is their own side. All Solo: every player is their own team. */
 function assignTeams(G){
   const P = G.players, n = G.n;
   if(G.allSolo){ P.forEach(p=>{ p.team = 1000+p.seat; p.solo = false; }); return; }   /* every player is their own team of one; not marked as a normal Solo */
   if(n===2){ P.forEach((p,i)=>{ p.team=i+1; p.solo=false; }); return; }
-  const teamCount = n<=4 ? 1 : 2;
-  if(G.handNum===1){ P.forEach((p,i)=>{ p.team=(i%teamCount)+1; p.solo=false; }); return; }
+  if(G.handNum===1){
+    P.forEach(p=>{ p.solo=false; });
+    if(n===3){ P.forEach(p=>{ p.team=1; }); return; }
+    if(n===5 || n===7){
+      /* the Mulai holder (found in the freshly dealt hands) plus random partners form the small team (5P: 2 players, 7P: 3) */
+      const holder = P.find(p=>p.hands.some(h=>h.some(c=>c.joker==='mulai')));
+      const hs = holder ? holder.seat : 0;
+      const others = shuffle(G,P.filter(p=>p.seat!==hs));
+      const mates = new Set(others.slice(0,n===5?1:2).map(p=>p.seat)); mates.add(hs);
+      P.forEach(p=>{ p.team = mates.has(p.seat) ? 1 : 2; });
+      return;
+    }
+    P.forEach((p,i)=>{ p.team = (i%2)+1; });   /* 4P and 6P: alternating seats */
+    return;
+  }
   if(G.freeze) return;
-  const sorted = shuffle(G,P).sort((a,b)=>b.total-a.total);
+  const sorted = shuffle(G,P).sort((a,b)=>b.total-a.total);   /* shuffle first so tied scores fall in random order */
   const k = SOLO_COUNT[n]||0; let sid = 500;
   sorted.forEach((p,i)=>{ if(i<k){ p.solo=true; p.team=sid++; } else { p.solo=false; p.team=0; } });
-  const rest = sorted.filter(p=>!p.solo).sort((a,b)=>a.total-b.total);
-  rest.forEach((p,i)=>{ p.team = teamCount===1 ? 1 : (i%teamCount)+1; });
+  const rest = sorted.slice(k);   /* highest → lowest */
+  if(n<=4){ rest.forEach(p=>{ p.team = 1; }); }
+  else {
+    /* two teams of 2: best + worst, second-best + second-worst */
+    if(rest.length===4) rest.forEach((p,i)=>{ p.team = (i===0||i===rest.length-1) ? 1 : 2; });
+    else rest.forEach((p,i)=>{ p.team = (i===0||i===3||i===4) ? 1 : 2; });   /* 7P/8P: six left, snake split 1st+4th+5th vs 2nd+3rd+6th */
+  }
 }
 
+/* Free Order: hands are kept sorted by ascending rank (suits in deck order: Hearts, Spades, Clubs, Sun, Diamonds, Moon, Crown, Pawn); jokers sit at the right end (Mulai, Garuda, Anjing, Naga) */
+const JORD = {mulai:0,garuda:1,anjing:2,naga:3};
+function freeSort(h){ return h.slice().sort((a,b)=>{ const ja=a.joker?1:0, jb=b.joker?1:0; if(ja!==jb) return ja-jb; if(ja) return JORD[a.joker]-JORD[b.joker]; return a.rank-b.rank || a.suit-b.suit || a.id-b.id; }); }
+E.freeSort = freeSort;
 /* ═══ HAND START ═══ */
 E.startHand = function(G){
   G.handNum++; G.over=false;
   const P = G.players;
-  assignTeams(G);
   const deck = shuffle(G, buildDeck(G));
-  const hs = G.dups?20:15;
+  const hs = 15 + dupRanks(G.dupSets).length;   /* 15 / 20 / 23 / 25 (jokers = suits, so every table size deals evenly) */
   const hands = []; for(let i=0;i<deck.length/hs;i++) hands.push(deck.slice(i*hs,(i+1)*hs));
-  P.forEach(p=>{ p.hands=[]; p.hand=[]; p.declined=[]; p.tableau=[]; p.out=false; p.passed=false; p.hv=zeroHV(); p.pickedUpThisTrick=false; });
+  P.forEach(p=>{ p.hands=[]; p.hand=[]; p.declined=[]; p.tableau=[]; p.out=false; p.passed=false; p.hv=zeroHV(); p.pickedUpThisTrick=false; p.decl=null; p.declOpen=true; });
+  G.declLog=[]; G.starDbl=false; G.trickMA=[]; G._maDone=false;
   G.outOrder=[]; G.teamPaid={}; G.bombDeclined={}; G.pool={}; G.stale=0; G.top=null; G.last=null; G.wish=null; G.passOrder=[]; G.starter=null; G.trickNo=0; G.reroundNoPlay=false; G.reround=false; G.turnDisplaced=false;
   if(G.n===2){ P[0].hands=[hands[0],hands[1]]; P[1].hands=[hands[2],hands[3]]; }
   else if(G.n===3){ for(let i=0;i<3;i++) P[i].hands=[hands[i]]; G.doubleSeat=(G.handNum-1)%3; P[G.doubleSeat].hands.push(hands[3]); }
   else for(let i=0;i<G.n;i++) P[i].hands=[hands[i]];
+  if(G.handOrder==='free') P.forEach(p=>{ p.hands = p.hands.map(freeSort); });
+  assignTeams(G);   /* after the deal, so 5P hand 1 can see who holds the Mulai */
   log(G,'— Hand '+G.handNum+' —','imp');
   G.phase='choosehand'; G.pending={queue:P.filter(p=>p.hands.length===2).map(p=>p.seat),i:0};
   advanceSetup(G);
@@ -479,10 +568,121 @@ function mulaiTarget(G,R){
   G.phase='exchange'; G.pending={seat:R};
 }
 function beginPlay(G){
+  if(G.maOn && !G._maDone){ startAuction(G); return; }
+  G._maDone=false;
+  G.players.forEach(p=>{ if(p.free) p.hand = freeSort(p.hand); });   /* Free Order: re-sort after the Mulai exchange */
   G.players.forEach(p=>{ if(p.declined.length){ const t = p.declined.reduce((s,c)=>s+tpVP(c),0); p.hv.tp += t; if(t) log(G,p.name+' discards a hand for '+t+' TP.'); } });
   G.starter = G._R; G.turn = G._R; G.phase='turn'; G.pending=null; G.turnDisplaced=false;
   log(G,G.players[G._R].name+' starts the hand.','imp');
 }
+
+
+/* ═══ MAJOR ARCANA (v1: VP cards) ═══ */
+const MA_SUIT_NAME = ['High Priestess','Emperor','Magician','Sun','Empress','Moon','Emergence','Death'];   /* printed deck: Hearts, Spades, Clubs, Sun, Diamonds, Moon, Crown, Pawn */
+E.MA_SUIT_NAME = MA_SUIT_NAME;
+function initMA(G){
+  const deck = []; let id = 900;
+  for(let s=0;s<G.nSuits;s++) deck.push({id:++id,key:'suit',suit:s,name:MA_SUIT_NAME[s]});
+  deck.push({id:++id,key:'cosmos',name:'The World (Cosmos)'});
+  deck.push({id:++id,key:'star',name:'The Star'});
+  G.ma = { deck:shuffle(G,deck), discard:[], table:[], space:G.players.map(()=>[]) };
+  G.trickMA = [];
+}
+function maDesc(c){
+  if(c.key==='suit') return '+5★ for each '+SUITS[c.suit]+' card (jokers count as one) on all tableaus';
+  if(c.key==='cosmos') return '+5★ for each different suit on all tableaus (a joker adds one)';
+  return 'All Star VP you score are doubled until the end of this trick';
+}
+E.maDesc = maDesc;
+function maDraw(G){
+  const M = G.ma;
+  if(!M.deck.length && M.discard.length){ M.deck = shuffle(G,M.discard); M.discard = []; }
+  return M.deck.length ? M.deck.pop() : null;
+}
+function maTopUp(G){
+  const M = G.ma, want = Math.max(3, 2*G.n);
+  while(M.table.length < want){ const c = maDraw(G); if(!c) break; M.table.push(c); }
+}
+function startAuction(G){
+  const M = G.ma; maTopUp(G);
+  const mn = G.players.slice().sort((a,b)=>a.total-b.total);
+  /* lowest total VP first; ties in random order */
+  const order = shuffle(G,G.players).sort((a,b)=>a.total-b.total).map(p=>p.seat);
+  G.phase='auction'; G.pending={order, i:0};
+  log(G,'Major Arcana auction: '+M.table.length+' cards on the table.','imp');
+  auctionSkip(G);
+}
+function auctionSkip(G){
+  const pd = G.pending, M = G.ma;
+  if(!M.table.length) pd.i = pd.order.length;
+  if(pd.i>=pd.order.length){
+    G._maDone = true; beginPlay(G);
+  }
+}
+function maActivate(G,seat,id){
+  const p = G.players[seat], M = G.ma;
+  if(!G.maOn) return {ok:false,err:'Major Arcana are not in play.'};
+  if(G.phase!=='turn' || G.turn!==seat) return {ok:false,err:'You can only use a Major on your own turn.'};
+  if(G.trickMA.includes(seat)) return {ok:false,err:'You already used a Major this trick.'};
+  const i = M.space[seat].findIndex(c=>c.id===id);
+  if(i<0) return {ok:false,err:'That Major is not in your Arcana space.'};
+  const c = M.space[seat][i];
+  const all = []; G.players.forEach(q=>q.tableau.forEach(m=>m.cards.forEach(x=>all.push(x.c))));
+  const jokers = all.filter(x=>x.joker).length;
+  let msg;
+  if(c.key==='suit'){
+    const n = all.filter(x=>!x.joker && x.suit===c.suit).length + jokers;
+    p.hv.star += 5*n; msg = c.name+': '+n+' '+SUITS[c.suit]+' card'+(n===1?'':'s')+' → +'+(5*n)+'★';
+  } else if(c.key==='cosmos'){
+    const d = new Set(all.filter(x=>!x.joker).map(x=>x.suit)).size;
+    const n = Math.min(G.nSuits, d+jokers);
+    p.hv.star += 5*n; msg = c.name+': '+n+' different suit'+(n===1?'':'s')+' → +'+(5*n)+'★';
+  } else { G.starDbl = true; msg = c.name+': Star VP doubled until the end of this trick'; }
+  M.space[seat].splice(i,1); M.discard.push(c); G.trickMA.push(seat);
+  log(G,p.name+' plays '+msg+'.','imp');
+  return {ok:true};
+}
+/* Anjing lead: the seats (active teammates) that may be handed the lead when a player starts a trick with the Anjing */
+E.leadTargets = function(G,seat){
+  if(G.top || G.allSolo) return [];
+  const p = G.players[seat]; if(!p || p.solo) return [];
+  return G.players.filter(q=>q.seat!==seat && !q.out && !q.solo && q.team===p.team).map(q=>q.seat);
+};
+/* Laoda / Pinyin declarations (from BenRummy): open on your own turn until you play a set onto your own tableau */
+E.declOptions = function(G,seat){
+  const p = G.players[seat];
+  if(!p || G.phase!=='turn' || G.turn!==seat || p.out || p.decl || !p.declOpen) return [];
+  return G.n>2 ? ['laoda','pinyin'] : ['laoda'];
+};
+function scoreDecl(G){
+  const P = G.players; const teams = {};
+  P.forEach(p=>{ (teams[p.team]=teams[p.team]||[]).push(p); });
+  Object.keys(teams).forEach(t=>{
+    const mem = teams[t];
+    ['laoda','pinyin'].forEach(kind=>{
+      const dec = G.declLog.map(s=>P[s]).filter(p=>p.team==t && p.decl===kind);
+      dec.forEach((p,i)=>{
+        const ok = kind==='laoda' ? G.outOrder[0]===p.seat : p.out;
+        const amt = kind==='laoda' ? 50 : 25;
+        if(ok){ mem.forEach(q=>{ q.hv.decl += amt; }); log(G,p.name+"'s "+kind.toUpperCase()+' succeeds: +'+amt+' VP to '+(mem.length>1?'the team':p.name)+'.','imp'); }
+        else if(i===0){ mem.forEach(q=>{ q.hv.decl -= amt; }); log(G,p.name+"'s "+kind.toUpperCase()+' fails: -'+amt+' VP'+(mem.length>1?' to the team':'')+'.','bad'); }
+        else { p.hv.decl -= amt; log(G,p.name+"'s "+kind.toUpperCase()+' fails: -'+amt+' VP (declared after a teammate).','bad'); }
+      });
+    });
+  });
+}
+E.scoreDecl = scoreDecl;
+E.maPayout = function(G,c){
+  const all = []; G.players.forEach(q=>q.tableau.forEach(m=>m.cards.forEach(x=>all.push(x.c))));
+  const jokers = all.filter(x=>x.joker).length;
+  if(c.key==='suit') return 5*(all.filter(x=>!x.joker && x.suit===c.suit).length + jokers);
+  if(c.key==='cosmos') return 5*Math.min(G.nSuits, new Set(all.filter(x=>!x.joker).map(x=>x.suit)).size + jokers);
+  return 0;
+};
+E.maOptions = function(G,seat){
+  if(!G.maOn || G.phase!=='turn' || G.turn!==seat || G.trickMA.includes(seat)) return [];
+  return G.ma.space[seat].slice();
+};
 
 /* ═══ NEEDS / RESPONSES ═══ */
 E.need = function(G){
@@ -490,6 +690,7 @@ E.need = function(G){
     case 'choosehand': return {type:'choosehand',seat:G.pending.queue[G.pending.i]};
     case 'mulaichoose': return {type:'mulaichoose',seat:G.pending.holder,options:G.pending.T};
     case 'exchange': return {type:'exchange',seat:G.pending.seat};
+    case 'auction': return {type:'auction',seat:G.pending.order[G.pending.i],options:G.ma.table.slice()};
     case 'turn': return {type:'turn',seat:G.turn};
     case 'wish': return {type:'wish',seat:G.pending.seat};
     case 'cannibalize': return {type:'cannibalize',seat:G.pending.queue[G.pending.i],options:cannOptions(G,G.pending.queue[G.pending.i])};
@@ -525,6 +726,7 @@ E.autoOrder = function(hand,newCards){
 function applyOrder(p,newCards,order){
   const map = {}; p.hand.concat(newCards).forEach(c=>map[c.id]=c);
   p.hand = order.map(id=>map[id]);
+  if(p.free) p.hand = freeSort(p.hand);   /* Free Order: cards that join the hand drop into sorted position */
 }
 
 E.respond = function(G,resp){
@@ -547,7 +749,14 @@ E.respond = function(G,resp){
       log(G,p.name+' takes the Mulai, giving up '+cardName(given)+'.');
       beginPlay(G); return {ok:true};
     }
-    case 'turn': return applyTurn(G,nd.seat,resp);
+    case 'auction': {
+      const M = G.ma, i = M.table.findIndex(c=>c.id===resp.cardId);
+      if(i<0) return {ok:false,err:'Pick a card from the table.'};
+      const c = M.table.splice(i,1)[0]; M.space[nd.seat].push(c);
+      log(G,P[nd.seat].name+' takes '+c.name+'.','imp');
+      G.pending.i++; auctionSkip(G); return {ok:true};
+    }
+    case 'turn': if(resp.t==='major') return maActivate(G,nd.seat,resp.id); return applyTurn(G,nd.seat,resp);
     case 'wish': {
       const r = resp.rank; G.wish = (r>=1&&r<=14)?r:null;
       log(G, P[nd.seat].name+(G.wish?' wishes for '+RSHORT[G.wish]+'.':' makes no wish.'),'imp');
@@ -564,40 +773,43 @@ E.cardName = cardName;
 
 /* ═══ TURN ACTIONS ═══ */
 function byId(hand,id){ return hand.find(c=>c.id===id); }
-function windowIds(hand,ids){
+function windowIds(hand,ids,free){
   const idx = ids.map(id=>hand.findIndex(c=>c.id===id));
   if(idx.some(i=>i<0)) return null;
+  if(free){ if(new Set(idx).size!==idx.length) return null; return idx.slice().sort((a,b)=>a-b); }   /* Free Order: any cards in the hand */
   for(let i=1;i<idx.length;i++) if(idx[i]!==idx[i-1]+1) return null;
   return idx;
 }
 function topDesc(G){ return G.top ? G.top.desc : null; }
 E.playOptions = function(G,seat,ids){
-  const p = G.players[seat]; const idx = windowIds(p.hand,ids);
+  const p = G.players[seat]; const idx = windowIds(p.hand,ids,p.free);
   if(!idx) return {options:[],err:'Select cards that sit next to each other in your hand.'};
   const cards = idx.map(i=>p.hand[i]);
   const descs = E.describe(cards,G.opts);
-  if(!descs.length) return {options:[],err:'Those cards do not form a set with the current options.'};
+  if(!descs.length) return {options:[],err:'Those cards do not form a set with the current options. Selected '+cards.length+': '+cards.map(cardName).join(', ')+'.'};
   const td = topDesc(G);
   const options = descs.filter(d=>d.kind==='anjing' || E.beats(d,td)).map(d=>({key:d.key,desc:d,label:d.label}));
-  return {options,err:options.length?null:(G.top&&G.top.desc.kind==='naga'?'Only a bomb can top the Naga.':'That does not beat the top set.')};
+  const dx = d => d.kind+' '+d.label.split(' — ')[0]+' ('+d.len+' cards'+(d.bomb?', bomb tier '+d.tier:', type '+d.typeOrder+', rank '+d.rankKey)+')';
+  const why = (a,b)=>{ if(!b) return ''; if(!!a.bomb!==!!b.bomb) return a.bomb?'bomb beats non-bomb':'non-bomb cannot beat a bomb'; if(a.bomb) return a.len!==b.len?'size '+a.len+' vs '+b.len : a.tier!==b.tier?'bomb tier '+a.tier+' vs '+b.tier : 'tie key '+a.tieKey+' vs '+b.tieKey; return a.len!==b.len?'size '+a.len+' vs '+b.len : a.typeOrder!==b.typeOrder?'type '+a.typeOrder+' vs '+b.typeOrder : 'rank '+a.rankKey+' vs '+b.rankKey+' (equal or lower)'; };
+  return {options,err:options.length?null:(G.top&&G.top.desc.kind==='naga'?'Only a bomb can top the Naga.':'That does not beat the top set. Yours: '+dx(descs[0])+' vs TOP: '+dx(td)+' — '+why(descs[0],td)+'.')};
 };
-function addable(m){ return m && m.kind!=='naga' && m.kind!=='anjing' && m.kind!=='runtriple' && m.len<6; }
+function addable(m,G){ return m && m.kind!=='naga' && m.kind!=='anjing' && m.kind!=='runtriple' && m.kind!=='runquad' && m.len<G.opts.max; }
 function addKindOK(mk,ck){
   switch(mk){
     case 'single': return ck!=='single';
-    case 'group': return ck==='group'||ck==='straight'||ck==='runpair'||ck==='runtriple'||ck==='fullhouse';
+    case 'group': return ck==='group'||ck==='straight'||ck==='runpair'||ck==='runtriple'||ck==='runquad'||ck==='fullhouse';
     case 'fullhouse': return ck==='fullhouse';
     case 'straight': return ck==='straight'||ck==='runpair'||ck==='runtriple';
     case 'aggregate': return ck==='aggregate';
-    case 'runpair': return ck==='runpair'||ck==='runtriple'||ck==='fullhouse';
+    case 'runpair': return ck==='runpair'||ck==='runtriple'||ck==='runquad'||ck==='fullhouse';
   }
   return false;
 }
 function findMeld(G,mid){ for(const p of G.players){ const m = p.tableau.find(x=>x.id===mid); if(m) return m; } return null; }
 E.addOptions = function(G,seat,mid,ids){
   const p = G.players[seat]; const m = findMeld(G,mid);
-  if(!m || !addable(m)) return {options:[],err:'That set cannot take more cards.'};
-  const idx = windowIds(p.hand,ids);
+  if(!m || !addable(m,G)) return {options:[],err:'That set cannot take more cards.'};
+  const idx = windowIds(p.hand,ids,p.free);
   if(!idx) return {options:[],err:'Select cards that sit next to each other in your hand.'};
   if(idx.length===p.hand.length && m.owner!==seat) return {options:[],err:'Your last cards must go on your own tableau.'};
   const cards = idx.map(i=>p.hand[i]);
@@ -646,7 +858,7 @@ E.garudaTargets = function(G,seat){
   return out;
 };
 
-/* Pick Up (trial option): instead of playing or passing, take 1-3 cards from a single meld belonging
+/* Pick Up (trial option): instead of playing or passing, take exactly 1 non-joker card from a meld belonging
    to ANOTHER player, as long as that meld has fewer than 4 cards (bombs, always 4+, are never eligible
    regardless of bomb status — the protection is purely about size). Choosing it counts as passing, so
    the normal "all but one has passed" trick-ending logic already handles it with no separate mechanism.
@@ -657,32 +869,84 @@ E.garudaTargets = function(G,seat){
    trick (bomb, pick up, bomb, pick up...). It resets at the start of every new trick. */
 function pickupTargets(G,seat){
   const out = [];
-  G.players.forEach(q=>{ if(q.seat===seat || q.out) return; q.tableau.forEach(m=>{ if(m.cards.length<4 && (!G.top || m.id!==G.top.id)) out.push(m); }); });
+  G.players.forEach(q=>{ if(q.seat===seat || q.out) return; q.tableau.forEach(m=>{ if(!m.desc.bomb && (!G.top || m.id!==G.top.id) && m.cards.some(x=>!x.c.joker)) out.push(m); }); });
   return out;
 }
 E.pickupTargets = pickupTargets;
 function pickupOptions(G,seat,mid,ids){
   const m = pickupTargets(G,seat).find(x=>x.id===mid); if(!m) return {ok:false,err:'That set cannot be picked up from.'};
-  if(!ids.length || ids.length>3) return {ok:false,err:'Choose 1 to 3 cards.'};
+  if(ids.length!==1) return {ok:false,err:'Pick up exactly 1 card.'};
   const cards = ids.map(id=>{ const x = m.cards.find(y=>y.c.id===id); return x?x.c:null; });
-  if(cards.some(c=>!c)) return {ok:false,err:'Those cards are not on that set.'};
+  if(cards.some(c=>!c)) return {ok:false,err:'That card is not on that set.'};
+  if(cards.some(c=>c.joker)) return {ok:false,err:'Jokers cannot be picked up.'};
   return {ok:true,meld:m,cards};
 }
 
+/* Free Order enumeration: every combination of cards that could possibly form a set. A cheap necessary-condition filter prunes the search
+   (one suit with sum <= 21 / one rank / consecutive span / running span / two ranks); describe() still decides legality. */
+function popcnt(x){ x = x - ((x>>>1)&0x55555555); x=(x&0x33333333)+((x>>>2)&0x33333333); return (((x+(x>>>4))&0x0F0F0F0F)*0x01010101)>>>24; }
+function couldBeSet(n,nat,suitMask,rankMask,dup,sum,hasG,hasM){
+  if(nat===0) return false;
+  if((suitMask&(suitMask-1))===0 && sum+(hasG?0.5:0)<=21) return true;       /* aggregate */
+  if(hasM) return false;                                                      /* Mulai only joins aggregates */
+  const nr = popcnt(rankMask);
+  if(nr===1) return true;                                                     /* group */
+  const minR = 31-Math.clz32(rankMask & -rankMask), maxR = 31-Math.clz32(rankMask);
+  if(!dup && maxR-minR+1<=n) return true;                                     /* straight */
+  if((n===4||n===6||n===8) && maxR-minR<=(n===8?3:2)) return true;                             /* running pair / triple */
+  if((n>=5&&n<=8) && nr===2) return true;                                   /* full house */
+  return false;
+}
+function enumFree(hand,base,minExtra,maxExtra,cb){
+  let nat0=0,suit0=0,rank0=0,dup0=false,sum0=0,g0=false,m0=false;
+  base.forEach(c=>{ if(c.joker){ if(c.joker==='garuda') g0=true; else if(c.joker==='mulai') m0=true; return; } nat0++; suit0|=1<<c.suit; const b=1<<c.rank; if(rank0&b) dup0=true; rank0|=b; sum0+=c.rank; });
+  const N = hand.length, idx = [];
+  (function rec(start,k,nat,suit,rank,dup,sum,g,m){
+    if(k>=minExtra && couldBeSet(base.length+k,nat,suit,rank,dup,sum,g,m)) cb(idx.slice());
+    if(k>=maxExtra) return;
+    for(let i=start;i<N;i++){
+      const c = hand[i]; if(c.joker==='anjing'||c.joker==='naga') continue;
+      idx.push(i);
+      if(c.joker) rec(i+1,k+1,nat,suit,rank,dup,sum,g||c.joker==='garuda',m||c.joker==='mulai');
+      else { const b=1<<c.rank; rec(i+1,k+1,nat+1,suit|(1<<c.suit),rank|b,dup||((rank&b)!==0),sum+c.rank,g,m); }
+      idx.pop();
+    }
+  })(0,0,nat0,suit0,rank0,dup0,sum0,g0,m0);
+}
+E._enumFree = enumFree;
 function legalCore(G,seat,ignoreWish){
   const p = G.players[seat]; const hand = p.hand; const acts = [];
-  for(let i=0;i<hand.length;i++){
-    for(let l=1;l<=Math.min(6,hand.length-i);l++){
+  if(p.free){
+    for(let i=0;i<hand.length;i++){
+      const ids = [hand[i].id]; const r = E.playOptions(G,seat,ids);
+      r.options.forEach(o=>acts.push({t:'play',ids,key:o.key,desc:o.desc,label:o.label}));
+    }
+    enumFree(hand,[],2,G.opts.max,idxs=>{
+      const ids = idxs.map(i=>hand[i].id); const r = E.playOptions(G,seat,ids);
+      r.options.forEach(o=>acts.push({t:'play',ids,key:o.key,desc:o.desc,label:o.label}));
+    });
+    if(G.top){
+      G.players.forEach(q=>q.tableau.forEach(m=>{
+        if(!addable(m,G)) return;
+        enumFree(hand,m.cards.map(x=>x.c),1,G.opts.max-m.len,idxs=>{
+          const ids = idxs.map(i=>hand[i].id); const r = E.addOptions(G,seat,m.id,ids);
+          r.options.forEach(o=>acts.push({t:'add',meldId:m.id,ids,key:o.key,desc:o.desc,label:'Add to '+(G.players[m.owner].name)+"'s set → "+o.label}));
+        });
+      }));
+    }
+  }
+  if(!p.free) for(let i=0;i<hand.length;i++){
+    for(let l=1;l<=Math.min(G.opts.max,hand.length-i);l++){
       const ids = hand.slice(i,i+l).map(c=>c.id);
       if(l>1 && hand.slice(i,i+l).some(c=>c.joker==='anjing'||c.joker==='naga')) continue;
       const r = E.playOptions(G,seat,ids);
       r.options.forEach(o=>acts.push({t:'play',ids,key:o.key,desc:o.desc,label:o.label}));
     }
   }
-  if(G.top){
+  if(!p.free && G.top){
     G.players.forEach(q=>q.tableau.forEach(m=>{
-      if(!addable(m)) return;
-      for(let i=0;i<hand.length;i++) for(let l=1;l<=Math.min(5,hand.length-i,6-m.len);l++){
+      if(!addable(m,G)) return;
+      for(let i=0;i<hand.length;i++) for(let l=1;l<=Math.min(hand.length-i,G.opts.max-m.len);l++){
         const ids = hand.slice(i,i+l).map(c=>c.id);
         const r = E.addOptions(G,seat,m.id,ids);
         r.options.forEach(o=>acts.push({t:'add',meldId:m.id,ids,key:o.key,desc:o.desc,label:'Add to '+(G.players[m.owner].name)+"'s set → "+o.label}));
@@ -710,15 +974,11 @@ function legalCore(G,seat,ignoreWish){
 /* A player who has passed may still play a bomb on their turn: only bomb plays/adds are offered, and passing again just declines. */
 E.legal = function(G,seat){
   const p = G.players[seat];
-  if(p.passed){
-    const r = legalCore(G,seat,true);
-    return {actions:r.actions.filter(a=>a.desc.bomb),displace:[],canPass:true,forced:false,singleBlock:false,canPickup:false,passedTurn:true};
-  }
   return legalCore(G,seat,false);
 };
 
 function resetPasses(G){ G.players.forEach(p=>p.passed=false); G.passOrder=[]; }
-function payStar(G,p,cards){ let t=0; cards.forEach(c=>t+=starVP(c)); p.hv.star+=t; return t; }
+function payStar(G,p,cards){ let t=0; cards.forEach(c=>t+=starVP(c)); if(G.starDbl) t*=2; p.hv.star+=t; return t; }
 function newMeld(G,owner,d){
   return {id:++G.mid,owner,kind:d.kind,len:d.len,desc:d,cards:d.cards.map(c=>({c,adder:owner}))};
 }
@@ -736,6 +996,12 @@ function checkWishFulfillable(G){
 }
 function applyTurn(G,seat,a){
   const P = G.players, p = P[seat];
+  if(a.t==='declare'){
+    if(!E.declOptions(G,seat).includes(a.kind)) return {ok:false,err:'You cannot declare that now.'};
+    p.decl = a.kind; p.declOpen = false; G.declLog.push(seat);
+    log(G,p.name+' declares '+(a.kind==='laoda'?'LAODA (will go out 1st)':'PINYIN (will go out)')+'!','imp');
+    return {ok:true};
+  }
   if(a.t==='pickup'){
     const lg = E.legal(G,seat);
     if(!lg.canPickup) return {ok:false,err:'Pick Up is not available right now.'};
@@ -749,14 +1015,13 @@ function applyTurn(G,seat,a){
     applyOrder(p,taken,ord);
     p.pickedUpThisTrick = true;
     log(G,p.name+' picks up '+taken.map(cardName).join(', ')+' from '+q.name+'.','imp');
-    p.passed = true; if(!G.passOrder.includes(seat)) G.passOrder.push(seat);
+    p.passed = true; G.passOrder = G.passOrder.filter(x=>x!==seat); G.passOrder.push(seat);
     G.turnDisplaced=false; return afterAction(G,seat,true);
   }
   if(a.t==='pass'){
     const lg = E.legal(G,seat);
     if(!lg.canPass) return {ok:false,err: !G.top ? 'You must lead a set.' : lg.singleBlock ? 'You cannot pass on a singleton set while a single card can be played. Play a card or a bigger set.' : 'A wish forces you to play the wished rank.'};
-    if(p.passed){ G.bombDeclined = G.bombDeclined||{}; G.bombDeclined[seat] = true; log(G,p.name+' stays passed.'); G.turnDisplaced=false; return afterAction(G,seat,true); }
-    p.passed = true; if(!G.passOrder.includes(seat)) G.passOrder.push(seat); log(G,p.name+' passes.');
+    p.passed = true; G.passOrder = G.passOrder.filter(x=>x!==seat); G.passOrder.push(seat); log(G,p.name+' passes.');
     G.turnDisplaced=false; return afterAction(G,seat,true);
   }
   if(a.t==='displace'){
@@ -782,23 +1047,30 @@ function applyTurn(G,seat,a){
     return {ok:true};
   }
   if(a.t==='play' || a.t==='add'){
+    if(p.free && Array.isArray(a.ids)){ const ix = id=>p.hand.findIndex(c=>c.id===id); a = Object.assign({},a,{ids:a.ids.slice().sort((x,y)=>ix(x)-ix(y))}); }   /* Free Order: ids are matched in hand order */
     const lg = E.legal(G,seat);
     const list = lg.actions;
     let found;
     if(a.t==='play') found = list.find(x=>x.t==='play' && x.key===a.key && x.ids.join()===a.ids.join());
     else found = list.find(x=>x.t==='add' && x.meldId===a.meldId && x.key===a.key && x.ids.join()===a.ids.join());
     if(!found){
-      if(p.passed) return {ok:false,err:'You passed earlier, so you can only play a bomb now.'};
       if(a.t==='play'){ const r = E.playOptions(G,seat,a.ids); if(r.options.length && G.wish && G.top) return {ok:false,err:'A wish forces you to play the wished rank ('+RSHORT[G.wish]+').'}; return {ok:false,err:r.err||'Illegal play.'}; }
       return {ok:false,err:'Illegal addition.'};
     }
     const cards = a.ids.map(id=>byId(p.hand,id));
     const d = found.desc;
+    let leadTo = null;
+    if(a.leadTo!=null){
+      if(d.kind!=='anjing' || G.top) return {ok:false,err:'Only an Anjing that starts a trick can pass the lead.'};
+      if(!E.leadTargets(G,seat).includes(a.leadTo)) return {ok:false,err:'That player cannot take the lead.'};
+      leadTo = a.leadTo;
+    }
     if(G.wish && cards.some(c=>!c.joker && c.rank===G.wish)) G.wish = null;
     checkWishFulfillable(G);
     let meld;
     if(a.t==='play'){
-      meld = newMeld(G,seat,d); p.tableau.push(meld); if(d.bomb && d.len===6) meld.completedBy = seat;
+      if(d.kind!=='anjing') p.declOpen = false;   /* playing a set onto your own tableau closes the declaration window (the Anjing does not) */
+      meld = newMeld(G,seat,d); p.tableau.push(meld); if(d.bomb && d.len===G.opts.max) meld.completedBy = seat;
       log(G,p.name+' plays '+d.label+'.');
     } else {
       meld = findMeld(G,a.meldId);
@@ -810,10 +1082,12 @@ function applyTurn(G,seat,a){
     payStar(G,p,cards);
     removeFromHand(p,a.ids);
     G.turnDisplaced=false;
-    p.passed = false;   /* playing anything — including a bomb while previously passed — makes you active again */
+    /* A pass only lasts until someone plays: any play (bomb or not) makes every passed player active again. The trick ends when everyone else has passed since the last play. */
+    G.players.forEach(q=>q.passed=false); G.passOrder = G.passOrder.filter(x=>x!==seat);
     if(d.kind==='anjing'){
       G.last = seat; G.reroundNoPlay=false;   /* Anjing counts as the last card played but tops nothing */
       if(p.hand.length===0) return finish(G,seat);
+      if(leadTo!=null){ log(G,p.name+' passes the lead to '+P[leadTo].name+'.','imp'); G.turn=leadTo; G.phase='turn'; G.pending=null; return {ok:true}; }
       return afterAction(G,seat);
     }
     const prevTop = G.top;
@@ -847,7 +1121,7 @@ function hasBombOption(G,s){
   return E.legal(G,s).actions.length>0;
 }
 function nextTurnSeat(G,seat){
-  for(let k=1;k<=G.n;k++){ const s=(seat+k)%G.n, q=G.players[s]; if(q.out) continue; if(!q.passed || hasBombOption(G,s)) return s; }
+  for(let k=1;k<=G.n;k++){ const s=(seat+k)%G.n, q=G.players[s]; if(q.out) continue; if(!q.passed) return s; }
   return null;
 }
 function nextBombHolder(G,seat){
@@ -859,10 +1133,7 @@ function afterAction(G,seat,passed){
   if(!passed && p.hand.length===0) return finish(G,seat);
   const act = activeSeats(G);
   if(act.length<=1){
-    /* the trick is about to end, but a player who passed earlier may still hold a playable bomb */
-    const s = nextBombHolder(G,seat);
-    if(s==null){ beginResolve(G); return {ok:true}; }
-    G.turn = s; G.phase='turn'; G.pending=null; return {ok:true};
+    beginResolve(G); return {ok:true};
   }
   G.turn = nextTurnSeat(G,seat); G.phase='turn'; G.pending=null;
   return {ok:true};
@@ -871,14 +1142,14 @@ function afterAction(G,seat,passed){
 /* ═══ GOING OUT ═══ */
 function discardTableau(G,p,opts){
   /* opts.rad: charge radioactive; always pay TP, Arrow (non-solo). Returns the number of cards discarded.
-     A discarded 6-card bomb scores 30 VP (15 + 15 with whoever completed it, if another player) and its ☢ cards score nothing. */
+     A discarded max-size bomb scores 30 VP (15 + 15 with whoever completed it, if another player) and its ☢ cards score nothing. */
   let cnt = 0;
   p.tableau.forEach(m=>{
-    const six = m.desc.bomb && m.cards.length===6;
+    const six = m.desc.bomb && m.cards.length===G.opts.max;   /* max-size bomb (4 at 2-4P, 5 at 5P, ... 8 at 8P) */
     if(six){
       const cb = m.completedBy;
-      if(cb!=null && cb!==p.seat){ p.hv.bomb += 15; G.players[cb].hv.bomb += 15; log(G,'6-card bomb! '+p.name+' and '+G.players[cb].name+' score 15 VP each.','imp'); }
-      else { p.hv.bomb += 30; log(G,'6-card bomb! '+p.name+' scores 30 VP.','imp'); }
+      if(cb!=null && cb!==p.seat){ p.hv.bomb += 15; G.players[cb].hv.bomb += 15; log(G,G.opts.max+'-card bomb! '+p.name+' and '+G.players[cb].name+' score 15 VP each.','imp'); }
+      else { p.hv.bomb += 30; log(G,G.opts.max+'-card bomb! '+p.name+' scores 30 VP.','imp'); }
     }
     m.cards.forEach(x=>{
       const c = x.c; cnt++;
@@ -895,8 +1166,10 @@ const STALE_LIMIT = 8;   /* safety net: hand ends if this many tricks in a row d
 function finish(G,seat){
   const p = G.players[seat];
   p.out = true; G.outOrder.push(seat); G.stale = 0;
+  if(G.vpMode==='none'){ const pb=[100,75,50][G.outOrder.length-1]||0; if(pb){ p.hv.place += pb; log(G,p.name+' scores '+pb+' VP for going out '+['1st','2nd','3rd'][G.outOrder.length-1]+'.','imp'); } }
   if(p.solo){ p.hv.bonus += 50; log(G,p.name+' goes out (#'+G.outOrder.length+') as a solo: +50 VP!','imp'); }   /* solos get a flat 50 (no team bonus, no Arrow) */
   else log(G,p.name+' goes out (#'+G.outOrder.length+')!','imp');   /* everyone else is rewarded through the team bonuses */
+  if(G.top && G.top.owner===seat) payBank(G,p,'going out with the top set');
   discardTableau(G,p,{rad:true});
   teamBonusCheck(G);
   if(G.outOrder.length>=G.needOut){ endHand(G); return {ok:true}; }
@@ -910,8 +1183,8 @@ function finish(G,seat){
 /* Team bonuses for going out. Every member of a (non-solo) team, including teammates still playing, gets:
      +25 for each teammate of theirs who has gone out (a player counts for themself too), and
      +25 more if the team's outs came consecutively (1-2, 2-3 or 1-2-3).
-   So two teammates out = 50 each, in sequence 75 each; 1-2-3 = 100 each. Skipped when the whole table is one team
-   (hand 1 at 3-4P). Solos have no team. */
+   So two teammates out = 50 each, in sequence 75 each; 1-2-3 = 100 each. It also applies when the whole table is one team
+   (hand 1 at 3P). Solos have no team. */
 function teamBonusCheck(G){
   const P = G.players, oo = G.outOrder;
   const teams = {}; P.forEach(p=>{ if(!p.solo) (teams[p.team]=teams[p.team]||[]).push(p); });
@@ -935,6 +1208,13 @@ function strongestMeld(G){
 
 /* ═══ END OF TRICK ═══ */
 const DIFF_PENALTY = 5;
+/* VP Scoring None: the owner of the top set banks 5 VP for every card still on their own tableau when it is discarded */
+function payBank(G,p,why){
+  if(G.vpMode!=='none') return;
+  const n = p.tableau.reduce((s,m)=>s+m.cards.length,0);
+  if(!n) return;
+  p.hv.bank += 5*n; log(G,p.name+' banks '+n+' card'+(n===1?'':'s')+' '+why+': +'+(5*n)+' VP.','imp');
+}
 function tableauCount(p){ return p.tableau.reduce((s,m)=>s+m.cards.length,0); }
 function longest(p){ return p.tableau.reduce((mx,m)=>Math.max(mx,m.len),0); }
 function beginResolve(G){
@@ -947,7 +1227,7 @@ function beginResolve(G){
   G.exempt = ex;
   /* Differential: a flat 5 VP for each non-exempt player with no cards at all on their tableau at trick end */
   P.forEach(p=>{
-    if(p.out || ex.has(p.seat)) return;
+    if(p.out || ex.has(p.seat) || G.vpMode==='none') return;   /* no differential under VP Scoring None */
     if(tableauCount(p)===0){ p.hv.diff -= DIFF_PENALTY; log(G,p.name+' pays '+DIFF_PENALTY+' VP (nothing played to the table).','bad'); }
   });
   const passers = [];
@@ -1039,6 +1319,7 @@ function doRetrieve(G,nd,resp){
 }
 function scoreTrick(G){
   const P = G.players;
+  if(G.top && !P[G.top.owner].out) payBank(G,P[G.top.owner],'with the top set');
   let discarded = 0;
   P.forEach(p=>{ if(p.out) return; discarded += discardTableau(G,p,{rad:!G.exempt.has(p.seat)}); });
   G.stale = discarded===0 ? (G.stale||0)+1 : 0;
@@ -1051,6 +1332,7 @@ function scoreTrick(G){
   } else leader = G.last;
   if(leader==null || P[leader].out){ leader = P.find(p=>!p.out).seat; }
   resetPasses(G); G.bombDeclined={}; G.top=null; G.last=null; G.reround=false; G.reroundNoPlay=false; G.trickNo++;
+  G.starDbl=false; G.trickMA=[];
   G.players.forEach(p=>{ p.pickedUpThisTrick=false; });   /* a new trick (not just a re-round within the same one) refreshes the pick-up allowance */
   G.turn = leader; G.phase='turn'; G.pending=null; G.turnDisplaced=false;
   log(G,P[leader].name+' leads the next trick.');
@@ -1082,6 +1364,7 @@ function endHand(G){
       log(G,'Arrow pool '+total+' → every teammate gets '+total+'.');
     });
   }
+  scoreDecl(G);
   P.forEach(p=>{ p.lastHV = Object.assign({},p.hv); p.lastTotal = hvTotal(p.hv); p.total += p.lastTotal; });
   const hi = Math.max(...P.map(p=>p.total));
   if(hi>=G.target){
@@ -1091,6 +1374,15 @@ function endHand(G){
   } else { G.phase='handend'; }
   G.pending = null;
 }
+/* Free Order: equivalent copies of the same card (duplicate cards) produce identical actions; keep one of each for hints and the AI. */
+E.dedupeActions = function(G,seat,acts){
+  const hand = G.players[seat].hand; const seen = new Set(); const out = [];
+  acts.forEach(a=>{
+    const sig = [a.t,a.meldId||0,a.label,a.ids.map(id=>{ const c=byId(hand,id); return c.joker?c.joker:(c.rank+':'+c.suit); }).sort().join(',')].join('|');
+    if(!seen.has(sig)){ seen.add(sig); out.push(a); }
+  });
+  return out;
+};
 E.nextHand = function(G){ if(G.phase==='handend') E.startHand(G); };
 E.hvTotalOf = p => hvTotal(p.hv);
 E.longest = longest;
@@ -1158,10 +1450,10 @@ function scoreAction(G,seat,a,level,ctx){
     if(owner!==seat && level==='hard'){ const o=G.players[owner]; if(o.hand.length<=3) sc -= 6; }
   }
   /* save strong sets for when they are needed */
-  const spend = d.bomb ? 8 : (d.kind==='naga'?7:(d.kind==='single'?d.rankKey*0.25:d.kind==='group'||d.kind==='fullhouse'?d.rankKey*0.2:d.kind==='aggregate'?d.rankKey*0.1:(14-d.start)*0.15));
+  const spend = d.bomb ? 8 : (d.kind==='naga'?7:(d.kind==='single'?d.rankKey*0.25:d.kind==='group'?d.rankKey*0.2:d.kind==='fullhouse'?(d.mainRank+(d.mainN-3)*2)*0.2:d.kind==='aggregate'?d.rankKey*0.1:(G.opts.stHigh?d.start:14-d.start)*0.15));
   const topLen = G.top?G.top.len:0; const needy = ctx.ownCards===0;
   sc -= spend*(needy?0.4:1);
-  if(d.bomb && d.len===6) sc += (a.t==='add' && G.players.flatMap(q=>q.tableau).find(x=>x.id===a.meldId).owner!==seat) ? 9 : 18;   /* 6-card bomb bonus (30 VP, 15 each if completed by another player) */
+  if(d.bomb && d.len===G.opts.max) sc += (a.t==='add' && G.players.flatMap(q=>q.tableau).find(x=>x.id===a.meldId).owner!==seat) ? 9 : 18;   /* 6-card bomb bonus (30 VP, 15 each if completed by another player) */
   if(d.bomb && !goesOut && !(hand.length<=6 || topLen>=3 || ctx.someoneNearOut)) sc -= 10;
   if(d.kind==='naga' && !ctx.someoneNearOut && hand.length>5) sc -= 6;
   /* keep the remaining hand adjacent-friendly */
@@ -1178,13 +1470,10 @@ function pickupChoice(G,seat){
   const targets = E.pickupTargets(G,seat); if(!targets.length) return null;
   let best=null,bv=1.5; // small threshold so the AI doesn't grab worthless cards just to avoid passing
   targets.forEach(m=>{
-    const cards = m.cards.map(x=>x.c).slice().sort((a,b)=>cardEV(G,m.owner,b,0.4)-cardEV(G,m.owner,a,0.4));
-    const cap = Math.min(3,cards.length);
-    for(let k=1;k<=cap;k++){
-      const chosen = cards.slice(0,k);
-      const v = chosen.reduce((s,c)=>s+cardEV(G,m.owner,c,0.4),0) - (k-1)*0.6; // slight cost per extra hand card
-      if(v>bv){ bv=v; best={meldId:m.id,ids:chosen.map(c=>c.id)}; }
-    }
+    m.cards.map(x=>x.c).filter(c=>!c.joker).forEach(c=>{
+      const v = cardEV(G,m.owner,c,0.4);
+      if(v>bv){ bv=v; best={meldId:m.id,ids:[c.id]}; }
+    });
   });
   return best;
 }
@@ -1197,6 +1486,7 @@ AI.turn = function(G,seat){
     if(d) return {t:'displace',meldId:d.meldId,garudaId:d.garudaId,cardId:d.cardId};
   }
   let acts = lg.actions;
+  if(p.free) acts = E.dedupeActions(G,seat,acts);
   if(!acts.length){
     if(lg.canPickup && level!=='easy'){ const pu = pickupChoice(G,seat); if(pu) return {t:'pickup',meldId:pu.meldId,ids:pu.ids}; }
     return {t:'pass'};
@@ -1225,7 +1515,7 @@ AI.turn = function(G,seat){
   let best=null,bs=-1e9;
   acts.forEach(a=>{
     let s = scoreAction(G,seat,a,level,ctx);
-    if(a.desc.kind==='anjing') s = 4 + E.starVP(p.hand.find(c=>c.id===a.ids[0])) + (G.top?1.5:-3);
+    if(a.desc.kind==='anjing') s = 4 + E.starVP(p.hand.find(c=>c.id===a.ids[0])) + (G.top?1.5:(level!=='easy'&&E.leadTargets(G,seat).length?1:-3));
     if(level==='medium') s += (rnd(G)-0.5)*1.5;
     if(s>bs){ bs=s; best=a; }
   });
@@ -1234,7 +1524,37 @@ AI.turn = function(G,seat){
     if(lg.canPickup && level!=='easy'){ const pu = pickupChoice(G,seat); if(pu) return {t:'pickup',meldId:pu.meldId,ids:pu.ids}; }
     return {t:'pass'};
   }
+  if(best.t==='play' && best.desc.kind==='anjing' && !G.top && level!=='easy'){
+    const tg = E.leadTargets(G,seat);
+    if(tg.length){ tg.sort((x,y)=>G.players[x].hand.length-G.players[y].hand.length); return {t:'play',ids:best.ids,key:best.key,leadTo:tg[0]}; }   /* hand the lead to the teammate closest to going out */
+  }
   return best.t==='play'?{t:'play',ids:best.ids,key:best.key}:{t:'add',meldId:best.meldId,ids:best.ids,key:best.key};
+};
+
+/* ── Declarations (Laoda / Pinyin) ── */
+AI.declare = function(G,seat){
+  const opts = E.declOptions(G,seat); if(!opts.length) return null;
+  const p = G.players[seat]; if(p.level==='easy') return null;
+  const adj = adjScore(p.hand)/Math.max(1,p.hand.length);
+  const mates = G.players.filter(q=>q.team===p.team && q.seat!==seat && q.decl);
+  if(adj>=AI.DECL_LAODA && opts.includes('laoda') && !mates.length) return 'laoda';
+  if(adj>=AI.DECL_PINYIN && opts.includes('pinyin') && !mates.some(q=>q.decl==='pinyin')) return 'pinyin';
+  return null;
+};
+AI.DECL_LAODA = 0.6, AI.DECL_PINYIN = 0.43;   /* per-card pair score of the starting hand; set from simulation: ~52-60% of hands at or above 0.43 went out, almost none reached the 50% needed for Laoda */
+
+/* ── Major Arcana ── */
+AI.major = function(G,seat){
+  const opts = E.maOptions(G,seat); if(!opts.length) return null;
+  const p = G.players[seat]; if(p.level==='easy') return null;
+  let best=null, bv=0;
+  opts.forEach(c=>{
+    let v;
+    if(c.key==='star'){ v = p.hand.some(x=>E.starVP(x)>0) ? 12 : 0; }
+    else { v = E.maPayout(G,c); if(v<15 && p.hand.length>6) v = 0; }
+    if(v>bv){ bv=v; best=c; }
+  });
+  return best ? best.id : null;
 };
 
 /* ── other decisions ── */
@@ -1246,6 +1566,14 @@ AI.decide = function(G,nd){
       if(level==='easy') return {idx:rnd(G)<0.5?0:1};
       const v0 = val(p.hands[0],p.hands[1]), v1 = val(p.hands[1],p.hands[0]);
       return {idx:v1>v0?1:0};
+    }
+    case 'auction': {
+      let best=nd.options[0], bv=-1;
+      nd.options.forEach(c=>{
+        const v = (c.key==='cosmos'? 3*G.nSuits*0.8 : c.key==='star'? 9 : 10) + rnd(G)*4;
+        if(v>bv){ bv=v; best=c; }
+      });
+      return {cardId:best.id};
     }
     case 'mulaichoose': return {seat:nd.options[0]};
     case 'exchange': {
@@ -1334,7 +1662,7 @@ if(typeof module!=='undefined' && module.exports) module.exports = AI; else root
 const E = (typeof require!=='undefined' && typeof module!=='undefined') ? require('./engine.js') : root.E;
 const S = {};
 
-const SUIT_PRIORITY = [0,1,2,3,4,5]; // Hearts, Swords, Diamonds, Coins, Moon, Sun
+const SUIT_PRIORITY = [0,1,2,3,4,5,6,7]; // deck order: Hearts, Spades, Clubs, Sun, Diamonds, Moon, Crown, Pawn
 const LOOSE_TIER_ORDER = ['runpair','group','straight'];   /* groups now claim cards before straights get a chance to orphan a pair's partner card */
 const TIER_ALLOWED = { runpair:'d', group:'b', straight:'c' };
 
@@ -1413,7 +1741,7 @@ function looseCandidates(pool, tierKind, opts){
     const byRank = {}; pool.forEach(c=>{ (byRank[c.rank]=byRank[c.rank]||[]).push(c); });
     Object.keys(byRank).forEach(r=>{
       const cs = byRank[r];
-      for(let n=2;n<=Math.min(6,cs.length);n++){
+      for(let n=2;n<=Math.min(opts.max||6,cs.length);n++){
         const some = cs.slice(0,n);
         const d = E.describe(some,opts).find(x=>!x.bomb && x.kind==='group' && x.len===n);
         if(d) out.push(d);
@@ -1613,23 +1941,24 @@ if(typeof module!=='undefined' && module.exports) module.exports = S; else root.
 
 if(typeof E!=='undefined' && typeof HandSort!=='undefined') E.setSorter(HandSort.optimizeHand);
 </script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 'use strict';
 const UI = (function(){
-const SUITCOL = ['#aa2018','#7a6200','#1a5aaa','#1a7838','#4a3888','#aa5000'];
+const SUITCOL = ['#1a4f94','#7a6200','#aa2018','#c85e00','#1a6a2a','#6a2a96','#222222','#707070'];   /* as printed: Hearts blue, Spades gold, Clubs red, Sun orange, Diamonds green, Moon purple, Crown black, Pawn grey */
 const JCOL = {naga:'#aa7000',garuda:'#b81818',mulai:'#0a7a78',anjing:'#3858b8'};
 const JNAME = {naga:'NAGA',garuda:'GARUDA',mulai:'MULAI',anjing:'ANJING'};
 const JLET = {naga:'Na',garuda:'Ga',mulai:'0',anjing:'An'};
 const RK = {1:'A'};
 const rk = r => RK[r]||String(r);
 const $ = id => document.getElementById(id);
-const S = {G:null,viewSeat:null,sel:[],timer:null,nHumans:1,setup:{n:4,level:'medium',sets:{a:1,b:1,c:1,d:0,e:0},dups:1,freeze:0,target:700,teamMode:0,sortedHand:0,pickups:0},cur:null,lastMsg:0};
+const S = {G:null,viewSeat:null,sel:[],timer:null,nHumans:1,setup:{n:4,level:'medium',sets:{a:1,b:1,c:1,d:0,e:0},dupSets:[],freeze:0,target:700,teamMode:0,handOrder:'free',pickups:0,majors:0,vpMode:'bzf',straights:'low'},cur:null,lastMsg:0};
 const FAST = ()=>!!window.__fast;
 
 /* ── SETUP ── */
 function buildSetup(){
   const np = $('np-group'); np.innerHTML='';
-  for(let n=2;n<=6;n++){ const b=document.createElement('button'); b.className='btn-opt'+(n===S.setup.n?' sel':''); b.textContent=n+'P'; b.onclick=()=>{ S.setup.n=n; buildSetup(); }; np.appendChild(b); }
+  for(let n=2;n<=8;n++){ const b=document.createElement('button'); b.className='btn-opt'+(n===S.setup.n?' sel':''); b.textContent=n+'P'; b.onclick=()=>{ S.setup.n=n; buildSetup(); }; np.appendChild(b); }
   const sl = $('slots'); const old = [...sl.querySelectorAll('input')].map(i=>i.value); sl.innerHTML='';
   for(let i=0;i<S.setup.n;i++){ const d=document.createElement('div'); d.className='slot'; d.innerHTML='<span class="tag">Seat '+(i+1)+'</span><input class="setup-input" maxlength="14" placeholder="AI">'; const inp=d.querySelector('input'); inp.value = old[i]!==undefined?old[i]:(i===0?'You':''); sl.appendChild(d); }
 }
@@ -1637,10 +1966,19 @@ function bindGroup(id,fn){ $(id).querySelectorAll('.btn-opt').forEach(b=>b.oncli
 function initSetup(){
   buildSetup();
   bindGroup('lv-group',b=>{ S.setup.level=b.dataset.v; });
-  bindGroup('dup-group',b=>{ S.setup.dups=+b.dataset.v; });
+  $('dup-group').querySelectorAll('.btn-opt').forEach(b=>b.onclick=()=>{
+    const v=+b.dataset.v, d=S.setup.dupSets;
+    if(v===0) d.length=0; else { const i=d.indexOf(v); if(i>=0) d.splice(i,1); else d.push(v); d.sort(); }
+    syncDups();
+  });
+  syncDups();
   bindGroup('ft-group',b=>{ S.setup.teamMode=+b.dataset.v; S.setup.freeze=+b.dataset.v; });
-  bindGroup('sh-group',b=>{ S.setup.sortedHand=+b.dataset.v; });
+  bindGroup('ho-group',b=>{ S.setup.handOrder=b.dataset.v; });
+  bindGroup('st-group',b=>{ S.setup.straights=b.dataset.v; });
   bindGroup('pu-group',b=>{ S.setup.pickups=+b.dataset.v; });
+  bindGroup('ma-group',b=>{ S.setup.majors=+b.dataset.v; });
+  bindGroup('sc-group',b=>{ S.setup.vpMode=b.dataset.v; syncMajorGate(); });
+  syncMajorGate();
   bindGroup('vp-group',b=>{ S.setup.target=+b.dataset.v; $('vp-custom').value=''; });
   $('sets-group').querySelectorAll('.btn-opt').forEach(b=>b.onclick=()=>{ const k=b.dataset.k; S.setup.sets[k]=S.setup.sets[k]?0:1; b.classList.toggle('sel',!!S.setup.sets[k]); });
   $('vp-custom').oninput = e=>{ const v=+e.target.value; if(v>=100){ S.setup.target=v; $('vp-group').querySelectorAll('.btn-opt').forEach(x=>x.classList.remove('sel')); } };
@@ -1648,12 +1986,28 @@ function initSetup(){
 function start(){
   const inputs=[...$('slots').querySelectorAll('input')].map(i=>i.value.trim());
   const n=S.setup.n; const names=[],human=[]; let ai=0;
-  const aiNames=['North','East','South','West','Zephyr'];
-  inputs.forEach((v,i)=>{ if(v){ names.push(v); human.push(true); } else { names.push(aiNames[ai++%5]+' (AI)'); human.push(false); } });
+  const aiNames=['North','East','South','West','Zephyr','Boreas','Notus','Eurus'];
+  inputs.forEach((v,i)=>{ if(v){ names.push(v); human.push(true); } else { names.push(aiNames[ai++%8]+' (AI)'); human.push(false); } });
   if(!human.some(x=>x)){ human[0]=true; names[0]='You'; }
   const sets=S.setup.sets; if(!sets.a && !sets.b && !sets.c && !sets.d && !sets.e){ toast('Pick at least one set type (singles are always allowed).'); }
-  S.nHumans = human.filter(x=>x).length;
-  S.G = E.newGame({n,names,human,level:S.setup.level,opts:{a:!!sets.a,b:!!sets.b,c:!!sets.c,d:!!sets.d,e:!!sets.e},dups:!!S.setup.dups,target:S.setup.target,freezeTeams:S.setup.teamMode===1,allSolo:S.setup.teamMode===2,sortedHand:S.setup.sortedHand===1,pickups:S.setup.pickups===1,seed:(Date.now()%2147483647)});
+  return startGame(names,human,n);
+}
+function syncDups(){
+  const d=S.setup.dupSets;
+  $('dup-group').querySelectorAll('.btn-opt').forEach(b=>{ const v=+b.dataset.v; b.classList.toggle('sel', v===0 ? d.length===0 : d.includes(v)); });
+  const h=$('dup-hint'); if(h) h.textContent='Hand size: '+(15+E.dupRanks(d).length)+' cards per hand. Pick any combination of 1–4; None clears them all.';
+}
+function syncMajorGate(){
+  const ok = S.setup.vpMode==='bzf'||S.setup.vpMode==='both';
+  if(!ok) S.setup.majors=0;
+  const g=$('ma-group'); if(!g) return;
+  g.querySelectorAll('.btn-opt').forEach(b=>{ b.disabled=!ok; b.classList.toggle('sel', +b.dataset.v===S.setup.majors); b.style.opacity = ok?'':'.45'; });
+  const h=$('ma-gate'); if(h) h.style.display = ok?'none':'block';
+}
+function startGame(names,human,n){
+  const sets=S.setup.sets;
+  S.nHumans = S.net?1:human.filter(x=>x).length;
+  S.G = E.newGame({n,names,human,level:S.setup.level,opts:{a:!!sets.a,b:!!sets.b,c:!!sets.c,d:!!sets.d,e:!!sets.e},dupSets:S.setup.dupSets.slice(),target:S.setup.target,freezeTeams:S.setup.teamMode===1,allSolo:S.setup.teamMode===2,handOrder:S.setup.handOrder,pickups:S.setup.pickups===1,vpMode:S.setup.vpMode,majors:S.setup.majors===1,straights:S.setup.straights,seed:(Date.now()%2147483647)});
   S.viewSeat = human.findIndex(x=>x); S.sel=[];
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $('game-screen').classList.add('active');
   E.startHand(S.G); drive();
@@ -1672,7 +2026,7 @@ function meldHTML(m,G,o){
   o=o||{}; const d=m.desc; const cs=m.cards.map(x=>x.c);
   let body;
   if(m.kind==='aggregate') body='<div class="vert">'+cs.map(miniHTML).join('')+'</div>';
-  else if(m.kind==='runpair'||m.kind==='runtriple'){
+  else if(m.kind==='runpair'||m.kind==='runtriple'||m.kind==='runquad'){
     const rank = c => c.joker==='garuda' ? d.garudaAs : c.rank; const groups={}; cs.forEach(c=>{ (groups[rank(c)]=groups[rank(c)]||[]).push(c); });
     body='<div class="cols">'+Object.keys(groups).sort((a,b)=>b-a).map(r=>'<div class="col">'+groups[r].map(c=>cardHTML(c,{sm:true})).join('')+'</div>').join('')+'</div>';
   } else if(m.kind==='fullhouse'){
@@ -1686,8 +2040,8 @@ function meldHTML(m,G,o){
 function teamBadge(p,G){ if(G.allSolo) return ''; if(p.solo) return '<span class="badge solo">Solo</span>'; if(G.n>=3 || G.n===2) return '<span class="badge t'+(p.team===2?2:1)+'">'+(G.n===2?('Side '+p.team):(p.team===2?'Red':'Blue'))+'</span>'; return ''; }
 function playerHead(p,G){
   const live = E.hvTotalOf(p);
-  return '<div class="ph"><span class="nm">'+tn(p)+'</span>'+teamBadge(p,G)+(p.out?'<span class="badge out">Out #'+(G.outOrder.indexOf(p.seat)+1)+'</span>':'')+(p.passed&&!p.out?'<span class="badge pass">Passed</span>':'')+
-   '<span class="cnt">'+p.hand.length+' cards</span><span class="vp">'+p.total+'<span style="font-weight:400;font-size:.78rem;color:var(--text3)"> ('+(live>=0?'+':'')+live+')</span></span></div>';
+  return '<div class="ph"><span class="nm">'+tn(p)+'</span>'+teamBadge(p,G)+(p.out?'<span class="badge out">Out #'+(G.outOrder.indexOf(p.seat)+1)+'</span>':'')+(p.passed&&!p.out?'<span class="badge pass">Passed</span>':'')+(G.last===p.seat&&!p.out&&G.phase==='turn'?'<span class="badge" title="Played last this trick" style="background:#c9a940;color:#222">LAST</span>':'')+
+   (p.decl?'<span class="badge" title="Declaration" style="background:'+(p.decl==='laoda'?'#c9a940;color:#222':'#0878a0;color:#fff')+'">'+p.decl.toUpperCase()+'</span>':'')+(G.maOn&&G.ma&&G.ma.space[p.seat].length?'<span class="badge" title="Arcana space" style="background:#6a2a96;color:#fff">✦ '+G.ma.space[p.seat].map(c=>esc(c.name)).join(', ')+'</span>':'')+'<span class="cnt">'+p.hand.length+' cards</span><span class="vp">'+p.total+'<span style="font-weight:400;font-size:.78rem;color:var(--text3)"> ('+(live>=0?'+':'')+live+')</span></span></div>';
 }
 function tn(p){ if(S.G && S.G.allSolo) return esc(p.name); return '<span class="'+(p.solo?'tns':(p.team===2?'tn2':'tn1'))+'">'+esc(p.name)+'</span>'; }
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -1696,10 +2050,11 @@ function curHand(){ return (S.viewSeat!=null && S.G.players[S.viewSeat])?S.G.pla
 function humanTurn(){ const nd=E.need(S.G); return nd && nd.type==='turn' && S.G.players[nd.seat].human && nd.seat===S.viewSeat ? nd : null; }
 
 function render(){
+  if(S.G && S.G.vpMode) E.setVPMode(S.G.vpMode);
   const G=S.G; if(!G) return;
   const nd=E.need(G);
-  $('ttl').textContent='Hand '+G.handNum+' · Trick '+((G.trickNo||0)+1)+' · to '+G.target+' VP';
-  const recent=G.log.slice(-2).map(l=>l.msg); $('ticker').innerHTML = recent.map(esc).join('<br>')||'&nbsp;';
+  $('ttl').innerHTML='<span class="tl">Hand '+G.handNum+' · Trick '+((G.trickNo||0)+1)+' · to '+G.target+' VP</span><span class="ts">H'+G.handNum+' · T'+((G.trickNo||0)+1)+' · '+G.target+' VP</span>';
+  const recent=G.log.slice(-2).map(l=>l.msg); $('ticker').innerHTML = recent.map(m=>'<div class="tk">'+esc(m)+'</div>').join('')||'&nbsp;';
   /* banner */
   const b=$('banner'); b.className=''; let bt='';
   if(G.phase==='turn'){ const tp=G.players[G.turn]; bt = (G.top? 'Top set: '+esc(G.top.desc.label.split(' — ')[0])+' — '+tn(G.players[G.top.owner]): 'Lead — play any set.')+' · '+(tp.human?(tp.seat===S.viewSeat?(tp.passed?'Your turn — you passed, but you can still play a bomb':'Your turn'):tn(tp)+"'s turn"):tn(tp)+(tp.passed?' may play a bomb…':' is thinking…')); if(G.top&&G.top.desc.kind==='naga') bt+=' · Only a bomb can top the Naga'; if(G.wish){ bt+=' · Wish: '+rk(G.wish); b.className='wish'; } }
@@ -1716,13 +2071,17 @@ function render(){
   if(me){
     mineEl.className='mine'+(me.seat===turnSeat?' turn':'');
     mineEl.innerHTML = playerHead(me,G)+'<div class="melds">'+me.tableau.map(m=>meldHTML(m,G,{addable:addable[m.id]})).join('')+'</div>';
-    mineEl.style.display='block';
+    mineEl.style.display='';
     $('hand').innerHTML = me.hand.map(c=>cardHTML(c,{sel:S.sel.includes(c.id)})).join('') || '<div class="hidden-hand">No cards in hand.</div>';
   } else { mineEl.style.display='none'; $('hand').innerHTML='<div class="hidden-hand">Hand hidden — waiting for the next player.</div>'; }
   document.querySelectorAll('#hand .card').forEach(el=>el.onclick=()=>toggleSel(+el.dataset.id));
   document.querySelectorAll('.meld.addable').forEach(el=>el.onclick=()=>doAdd(+el.dataset.mid));
   renderActions();
+  syncDock();
 }
+/* phone layout: tell the CSS how tall the pinned control area is, so the slim 'your sets' strip can sit just above it */
+function syncDock(){ const dk=$('dock'); if(dk) document.documentElement.style.setProperty('--dockh',dk.offsetHeight+'px'); }
+window.addEventListener('resize',()=>{ try{ syncDock(); }catch(e){} });
 function renderActions(){
   const G=S.G, ht=humanTurn(); const a=$('actions'); const hint=$('hint');
   if(!ht){ a.innerHTML=''; hint.textContent = ''; return; }
@@ -1732,19 +2091,25 @@ function renderActions(){
   let prev=''; if(S.sel.length){ const r=E.playOptions(G,ht.seat,S.sel); prev = r.options.length? 'Play: '+r.options.map(o=>o.label.split(' — ')[0]).slice(0,2).join(' or ') : (r.err||''); }
   if(lg.forced) prev = 'Wish: you must play a set containing '+rk(G.wish)+(names.length?' — e.g. '+names.join(', ')+'.':'.')+' '+prev;
   else if(lg.singleBlock) prev = 'You cannot pass: a single card can be played on this singleton set (or play a bigger set). '+prev;
-  if(lg.passedTurn) prev = 'You passed earlier and are locked out for this trick, except for playing a bomb of your own. Tap Pass to stay out. '+prev;
   else if(G.top&&G.top.desc.kind==='naga'&&!lg.actions.length) prev = 'Only a bomb can top the Naga. Pass unless you have one.';
-  let base = prev || (G.top?'Select cards next to each other to play, or tap a green set to add to it.':'Select cards next to each other to lead a set.');
+  const adj = G.players[ht.seat].free ? '' : ' next to each other';
+  let base = prev || (G.top?'Select cards'+adj+' to play, or tap a green set to add to it.':'Select cards'+adj+' to lead a set.');
   if(!S.sel.length && !lg.displace.length && !lg.passedTurn){ const gt=E.garudaTargets(G,ht.seat)[0]; if(gt) base += ' Garuda in '+G.players[gt.owner].name+"'s set: replace it with "+gt.need+'.'; }
   hint.textContent = base;
   a.innerHTML=(blocked?'<button class="abtn" id="btn-show">Show me</button>':'')+'<button class="abtn" id="btn-play"'+(S.sel.length?'':' disabled')+'>Play</button>'+
     '<button class="abtn sec" id="btn-pass"'+(lg.canPass?'':' disabled')+'>Pass</button>'+
     (lg.canPickup?'<button class="abtn sec" id="btn-pickup">Pick Up</button>':'')+
     '<button class="abtn sec" id="btn-hint">Hint</button>'+
+    (bombPlays(lg,ht.seat).length?'<button class="abtn sec" id="btn-bomb">Bomb</button>':'')+
     (lg.displace.length?'<button class="abtn sec" id="btn-disp">Displace Garuda</button>':'')+
+    E.declOptions(G,ht.seat).map(k=>'<button class="abtn sec" data-decl="'+k+'" title="'+(k==='laoda'?'Declare that you will go out 1st: +50 VP to your team if you do, -50 if you fail':'Declare that you will go out: +25 VP to your team if you do, -25 if you fail')+'">'+(k==='laoda'?'Laoda':'Pinyin')+'</button>').join('')+
+    E.maOptions(G,ht.seat).map(c=>'<button class="abtn sec" data-ma="'+c.id+'" title="'+esc(E.maDesc(c))+'">Play '+esc(c.name)+(c.key==='star'?'':' (+'+E.maPayout(G,c)+'★)')+'</button>').join('')+
     '<button class="abtn sec" id="btn-clear"'+(S.sel.length?'':' disabled')+'>Clear</button>';
+  a.querySelectorAll('[data-decl]').forEach(b=>b.onclick=()=>{ const keep=S.sel.slice(); if(send({t:'declare',kind:b.dataset.decl})){ S.sel=keep; render(); } });
+  a.querySelectorAll('[data-ma]').forEach(b=>b.onclick=()=>{ const keep=S.sel.slice(); if(send({t:'major',id:+b.dataset.ma})){ S.sel=keep; render(); } });   /* a Major is a free action: keep any cards already selected */
   $('btn-play').onclick=doPlay; $('btn-pass').onclick=()=>send({t:'pass'}); $('btn-clear').onclick=()=>{ S.sel=[]; render(); };
   $('btn-hint').onclick=hintModal;
+  const bb=$('btn-bomb'); if(bb) bb.onclick=bombModal;
   const sh=$('btn-show'); if(sh) sh.onclick=()=>{ if(lg.actions.length===1) selectIds(lg.actions[0].ids); else hintModal(); };
   const bd=$('btn-disp'); if(bd) bd.onclick=doDisplace;
   const bp=$('btn-pickup'); if(bp) bp.onclick=doPickupPickMeld;
@@ -1756,11 +2121,11 @@ function doPickupPickMeld(){
 }
 function doPickupPickCards(m){
   const ht=humanTurn(); if(!ht) return; const G=S.G;
-  const cards = m.cards.map(x=>x.c); const cap = Math.min(3,cards.length);
-  modal('<h3>Pick Up — choose 1 to '+cap+' card'+(cap>1?'s':'')+'</h3><p>Tap cards to select, then confirm.</p><div class="strip2" id="puc">'+cards.map(c=>cardHTML(c,{pick:true,sm:true,solid:true})).join('')+'</div><button class="mopt pri" id="puok">Confirm</button><button class="mopt" onclick="UI.close()">Cancel</button>',el=>{
+  const cards = m.cards.map(x=>x.c); const cap = 1;
+  modal('<h3>Pick Up — choose 1 card</h3><p>Tap one card to take it, then confirm. Jokers cannot be taken.</p><div class="strip2" id="puc">'+cards.map(c=>cardHTML(c,{pick:!c.joker,sm:true,solid:true})).join('')+'</div><button class="mopt pri" id="puok">Confirm</button><button class="mopt" onclick="UI.close()">Cancel</button>',el=>{
     const sel=[];
-    el.querySelectorAll('#puc .card').forEach(cd=>cd.onclick=()=>{ const id=+cd.dataset.id; const i=sel.indexOf(id);
-      if(i>=0){ sel.splice(i,1); cd.classList.remove('sel'); } else if(sel.length<cap){ sel.push(id); cd.classList.add('sel'); } });
+    el.querySelectorAll('#puc .card').forEach(cd=>cd.onclick=()=>{ const id=+cd.dataset.id; const cc=cards.find(c=>c.id===id); if(!cc||cc.joker){ toast('Jokers cannot be picked up.'); return; } const i=sel.indexOf(id);
+      if(i>=0){ sel.splice(i,1); cd.classList.remove('sel'); } else { el.querySelectorAll('#puc .card.sel').forEach(x=>x.classList.remove('sel')); sel.length=0; sel.push(id); cd.classList.add('sel'); } });
     el.querySelector('#puok').onclick=()=>{
       if(!sel.length){ toast('Choose at least one card.'); return; }
       closeModal();
@@ -1773,8 +2138,28 @@ function selectIds(ids){
   S.sel=ids.slice(); render();
   const el=document.querySelector('#hand .card.sel'); if(el&&el.scrollIntoView) el.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
 }
+/* Bomb button: every bomb that can be played as a new set right now, strongest first. Tap one for a Play / Cancel confirm. */
+function bombPlays(lg,seat){
+  const G=S.G, p=G.players[seat]; let acts=lg.actions.filter(a=>a.t==='play'&&a.desc.bomb);
+  if(p.free) acts=E.dedupeActions(G,seat,acts);
+  return acts.sort((x,y)=>y.ids.length-x.ids.length||y.desc.tier-x.desc.tier||(y.desc.tieKey-x.desc.tieKey));
+}
+function bombModal(){
+  const ht=humanTurn(); if(!ht) return; const G=S.G, p=G.players[ht.seat]; const lg=E.legal(G,ht.seat); const list=bombPlays(lg,ht.seat);
+  if(!list.length){ toast('You have no bomb you can play right now.'); return; }
+  modal('<h3>Bombs you can play</h3><p>Tap a bomb to play it. You can cancel on the next screen.</p>'+list.map((a,i)=>'<button class="mopt hrow" data-k="'+i+'"><div class="strip">'+a.ids.map(id=>cardHTML(p.hand.find(c=>c.id===id),{sm:true})).join('')+'</div><span class="who">'+esc(a.label.replace(' — BOMB (','  ·  bomb: ').replace(')',''))+'</span></button>').join('')+'<button class="mopt" onclick="UI.close()">Close</button>',el=>{
+    el.querySelectorAll('.hrow').forEach(b=>b.onclick=()=>bombConfirm(list[+b.dataset.k]));
+  });
+}
+function bombConfirm(a){
+  const ht=humanTurn(); if(!ht) return; const p=S.G.players[ht.seat];
+  modal('<h3>Play this bomb?</h3><div class="strip" style="justify-content:center;margin:6px 0 8px">'+a.ids.map(id=>cardHTML(p.hand.find(c=>c.id===id),{sm:true})).join('')+'</div><p><b>'+esc(a.label.replace(' — BOMB (','  ·  bomb: ').replace(')',''))+'</b></p><button class="mopt" id="bomb-yes">Play bomb</button><button class="mopt" id="bomb-no">Cancel</button>',el=>{
+    el.querySelector('#bomb-yes').onclick=()=>{ closeModal(); send({t:'play',ids:a.ids.slice(),key:a.key}); };
+    el.querySelector('#bomb-no').onclick=()=>bombModal();
+  });
+}
 function hintModal(){
-  const ht=humanTurn(); if(!ht) return; const G=S.G, p=G.players[ht.seat]; const lg=E.legal(G,ht.seat);
+  const ht=humanTurn(); if(!ht) return; const G=S.G, p=G.players[ht.seat]; const lg=E.legal(G,ht.seat); if(p.free) lg.actions=E.dedupeActions(G,ht.seat,lg.actions);
   const list=[]; const sec=(title,arr)=>{ if(!arr.length) return ''; return '<div class="hsec">'+title+'</div>'+arr.map(a=>{ const i=list.push(a)-1;
       return '<button class="mopt hrow" data-k="'+i+'"><div class="strip">'+a.ids.map(id=>cardHTML(p.hand.find(c=>c.id===id),{sm:true})).join('')+'</div><span class="who">'+esc(a.label.split(' — ')[0])+(a.desc.bomb?' — BOMB':'')+'</span></button>'; }).join(''); };
   const multi=lg.actions.filter(a=>a.t==='play'&&a.ids.length>1).sort((x,y)=>y.ids.length-x.ids.length||x.label.localeCompare(y.label));
@@ -1789,6 +2174,7 @@ function hintModal(){
 }
 function toggleSel(id){
   if(!humanTurn()) return;
+  if(S.G.handOrder==='free'){ const hh=curHand(); const k=S.sel.indexOf(id); if(k>=0) S.sel.splice(k,1); else S.sel.push(id); S.sel.sort((a,b)=>hh.findIndex(c=>c.id===a)-hh.findIndex(c=>c.id===b)); render(); return; }   /* Free Order: any cards */
   const hand=curHand(); const i=hand.findIndex(c=>c.id===id); const idxs=S.sel.map(x=>hand.findIndex(c=>c.id===x)).sort((a,b)=>a-b);
   if(!idxs.length) S.sel=[id];
   else if(idxs.includes(i)){ if(i===idxs[0]||i===idxs[idxs.length-1]) S.sel=S.sel.filter(x=>x!==id); else S.sel=[id]; }
@@ -1800,7 +2186,13 @@ function toggleSel(id){
 
 /* ── ACTIONS ── */
 function toast(msg){ const t=$('toast'); t.textContent=msg; t.style.display='block'; clearTimeout(toast._t); toast._t=setTimeout(()=>t.style.display='none',2600); }
+/* respond as the local player: on a guest this goes to the host, otherwise straight to the engine */
+function R(resp){
+  if(NET.isGuest()){ NET.sendAct(resp); return {ok:true}; }
+  const r=E.respond(S.G,resp); drive(); return r;
+}
 function send(act){
+  if(NET.isGuest()){ if(NET.sendAct(act)){ S.sel=[]; render(); return true; } return false; }
   const r=E.respond(S.G,act); if(!r.ok){ toast(r.err||'Not allowed.'); return false; }
   S.sel=[]; drive(); return true;
 }
@@ -1814,7 +2206,12 @@ function doPlay(){
   const ht=humanTurn(); if(!ht||!S.sel.length) return;
   const r=E.playOptions(S.G,ht.seat,S.sel); if(!r.options.length){ toast(r.err); return; }
   const ids=S.sel.slice();
-  chooser('Choose how to play these cards',r.options.map(o=>({label:o.label,fn:()=>send({t:'play',ids,key:o.key})})),true);
+  const tg = E.leadTargets(S.G,ht.seat);
+  chooser('Choose how to play these cards',r.options.map(o=>({label:o.label,fn:()=>{
+    if(o.desc.kind==='anjing' && tg.length){
+      chooser('Who leads next?',[{label:'Next player (as usual)',fn:()=>send({t:'play',ids,key:o.key})}].concat(tg.map(s=>({label:'Pass the lead to '+S.G.players[s].name,fn:()=>send({t:'play',ids,key:o.key,leadTo:s})}))),true);
+    } else send({t:'play',ids,key:o.key});
+  }})),true);
 }
 function doAdd(mid){
   const ht=humanTurn(); if(!ht||!S.sel.length) return;
@@ -1840,6 +2237,7 @@ function modal(html,after,peek){
 function unpeek(){ $('peekbar').classList.remove('on'); $('modal-root').classList.add('on'); }
 function closeModal(){ const r=$('modal-root'); r.classList.remove('on'); r.innerHTML=''; $('peekbar').classList.remove('on'); }
 function placeCards(base,newCards,cb){
+  if(S.G && S.G.handOrder==='free'){ cb(E.autoOrder(base,newCards)); return; }   /* Free Order: the engine drops new cards into sorted position */
   let cur=base.slice(); let i=0;
   const step=()=>{
     if(i>=newCards.length){ closeModal(); cb(cur.map(c=>c.id)); return; }
@@ -1861,20 +2259,26 @@ function prompt(nd){
       const tp = h=>h.reduce((s,c)=>s+E.tpVP(c),0);
       modal('<h3>Choose the hand you will play</h3><p>The other hand is discarded and scores only its TP.</p>'+
         p.hands.map((h,i)=>'<div class="legend">Hand '+(i===0?'A':'B')+' — '+h.length+' cards · TP if discarded: '+tp(h)+'</div><div class="strip2">'+h.map(c=>cardHTML(c,{sm:true})).join('')+'</div><button class="mopt pri" data-i="'+i+'">Play hand '+(i===0?'A':'B')+'</button>').join(''),
-        el=>el.querySelectorAll('button[data-i]').forEach(b=>b.onclick=()=>{ closeModal(); E.respond(G,{idx:+b.dataset.i}); drive(); }),true);
+        el=>el.querySelectorAll('button[data-i]').forEach(b=>b.onclick=()=>{ closeModal(); R({idx:+b.dataset.i}); }),true);
+      break; }
+    case 'auction': {
+      render();
+      modal('<h3>Major Arcana auction</h3><p>Lowest total VP picks first. Take one card; it goes to your Arcana space and you can play it on your own turn (once per trick).</p>'+
+        nd.options.map(c=>'<button class="mopt" data-i="'+c.id+'"><b>'+esc(c.name)+'</b><br><span style="font-size:.78rem;opacity:.8">'+esc(E.maDesc(c))+'</span></button>').join(''),
+        el=>el.querySelectorAll('.mopt').forEach(b=>b.onclick=()=>{ closeModal(); R({cardId:+b.dataset.i}); }),true);
       break; }
     case 'mulaichoose': {
       modal('<h3>Give the Mulai to…</h3><p>These players are tied for the lowest total VP.</p>'+nd.options.map(s=>'<button class="mopt" data-s="'+s+'">'+esc(G.players[s].name)+'</button>').join(''),
-        el=>el.querySelectorAll('.mopt').forEach(b=>b.onclick=()=>{ closeModal(); E.respond(G,{seat:+b.dataset.s}); drive(); }),true);
+        el=>el.querySelectorAll('.mopt').forEach(b=>b.onclick=()=>{ closeModal(); R({seat:+b.dataset.s}); }),true);
       break; }
     case 'exchange': {
       render();
       modal('<h3>You take the Mulai</h3><p>Choose a card from your hand to give up. The Mulai takes its place, and your card goes to wherever the Mulai was.</p><div class="strip2" id="xs">'+p.hand.map(c=>cardHTML(c,{pick:true,sm:true})).join('')+'</div>',
-        el=>el.querySelectorAll('.card').forEach(cd=>cd.onclick=()=>{ closeModal(); E.respond(G,{giveId:+cd.dataset.id}); drive(); }),true);
+        el=>el.querySelectorAll('.card').forEach(cd=>cd.onclick=()=>{ closeModal(); R({giveId:+cd.dataset.id}); }),true);
       break; }
     case 'wish': {
       modal('<h3>Mulai — wish for a rank</h3><p>The next player who can play this rank must.</p><div class="rankgrid">'+[1,2,3,4,5,6,7,8,9,10,11,12,13,14].map(r=>'<button data-r="'+r+'">'+rk(r)+'</button>').join('')+'</div><button class="mopt" data-r="0">No wish</button>',
-        el=>el.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{ closeModal(); E.respond(G,{rank:+b.dataset.r||null}); drive(); }),true);
+        el=>el.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{ closeModal(); R({rank:+b.dataset.r||null}); }),true);
       break; }
     case 'cannibalize': {
       render();
@@ -1882,35 +2286,52 @@ function prompt(nd){
       modal('<h3>Cannibalize?</h3><p>Take one card from the last-card player’s or the top-set player’s tableau. No Stars, jokers or bombs.</p>'+
         opts.map((o,i)=>{ const c=o.card; return '<button class="mopt copt" data-i="'+i+'" style="border-color:'+SUITCOL[c.suit]+'">'+cardHTML(c,{solid:true})+'<span class="who">from '+tn(G.players[o.target])+'</span><span class="legend">'+marks(c)+'</span></button>'; }).join('')+'<button class="mopt" data-i="x">Skip</button>',
         el=>el.querySelectorAll('.mopt').forEach(b=>b.onclick=()=>{
-          closeModal(); if(b.dataset.i==='x'){ E.respond(G,{skip:true}); drive(); return; }
+          closeModal(); if(b.dataset.i==='x'){ R({skip:true}); return; }
           const o=opts[+b.dataset.i];
-          placeCards(p.hand,[o.card],order=>{ E.respond(G,{target:o.target,cardId:o.cardId,order}); drive(); });
+          placeCards(p.hand,[o.card],order=>{ R({target:o.target,cardId:o.cardId,order}); });
         }),true);
       break; }
     case 'retrieve': {
       render();
       modal('<h3>Retrieve a card?</h3><p>Take one card from your own tableau back into your hand before it scores. Retrieved cards score nothing.</p><div class="strip2">'+nd.options.map(c=>cardHTML(c,{pick:true,sm:true,solid:true})).join('')+'</div><button class="mopt" data-x="1">Skip</button>',
-        el=>{ el.querySelectorAll('.card').forEach(cd=>cd.onclick=()=>{ const c=nd.options.find(x=>x.id===+cd.dataset.id); closeModal(); placeCards(p.hand,[c],order=>{ E.respond(G,{cardId:c.id,order}); drive(); }); });
-              el.querySelector('[data-x]').onclick=()=>{ closeModal(); E.respond(G,{skip:true}); drive(); }; },true);
+        el=>{ el.querySelectorAll('.card').forEach(cd=>cd.onclick=()=>{ const c=nd.options.find(x=>x.id===+cd.dataset.id); closeModal(); placeCards(p.hand,[c],order=>{ R({cardId:c.id,order}); }); });
+              el.querySelector('[data-x]').onclick=()=>{ closeModal(); R({skip:true}); }; },true);
       break; }
   }
 }
 
 /* ── DRIVER ── */
+function guestDrive(){
+  const G=S.G; const nd=E.need(G);
+  if(S.sumOpen && (!nd || (nd.type!=='handend' && nd.type!=='gameend'))){ closeModal(); S.sumOpen=false; }
+  render(); if(!nd) return;
+  if(nd.type==='handend'){ if(!S.sumOpen){ S.sumOpen=true; showSummary(false); } return; }
+  if(nd.type==='gameend'){ if(!S.sumOpen){ S.sumOpen=true; showSummary(true); } return; }
+  if(nd.seat===S.viewSeat) prompt(nd);
+}
 function drive(){
   clearTimeout(S.timer); const G=S.G; if(!G) return;
+  if(NET.isGuest()) return guestDrive();
+  NET.broadcast();
   const nd=E.need(G); if(!nd){ render(); return; }
   if(nd.type==='handend'){ render(); showSummary(false); return; }
   if(nd.type==='gameend'){ render(); showSummary(true); return; }
   const p=G.players[nd.seat];
   if(p.human){
-    if(S.nHumans>1 && S.viewSeat!==nd.seat){ S.viewSeat=null; render(); $('ho-name').textContent=p.name; $('handoff').classList.add('on'); return; }
-    if(S.viewSeat==null) S.viewSeat=nd.seat;
-    render(); if(nd.type!=='turn' || true) prompt(nd); return;
+    if(S.net){
+      if(nd.seat===S.viewSeat){ render(); prompt(nd); return; }   /* the host's own seat */
+      if(NET.seatOnline(nd.seat)){ render(); return; }            /* wait for that guest; an offline guest falls through to the AI */
+    } else {
+      if(S.nHumans>1 && S.viewSeat!==nd.seat){ S.viewSeat=null; render(); $('ho-name').textContent=p.name; $('handoff').classList.add('on'); return; }
+      if(S.viewSeat==null) S.viewSeat=nd.seat;
+      render(); if(nd.type!=='turn' || true) prompt(nd); return;
+    }
   }
   render();
   const delay = FAST()?0:(nd.type==='turn'?650:(nd.type==='cannibalize'||nd.type==='retrieve'?260:420));
   S.timer=setTimeout(()=>{
+    if(nd.type==='turn'){ const dk=AI.declare(G,nd.seat); if(dk){ E.respond(G,{t:'declare',kind:dk}); render(); } }
+    if(nd.type==='turn'){ const mid=AI.major(G,nd.seat); if(mid){ E.respond(G,{t:'major',id:mid}); render(); } }
     const resp=AI.decide(G,nd); let r=E.respond(G,resp);
     if(!r.ok){ console.error('AI failed',r.err,nd.type,resp); r=E.respond(G,nd.type==='turn'?{t:'pass'}:{skip:true}); if(!r.ok && nd.type==='turn'){ const lg=E.legal(G,nd.seat); const a=lg.actions[0]; if(a) E.respond(G,a.t==='play'?{t:'play',ids:a.ids,key:a.key}:{t:'add',meldId:a.meldId,ids:a.ids,key:a.key}); } }
     drive();
@@ -1921,30 +2342,226 @@ function reveal(){ $('handoff').classList.remove('on'); const nd=E.need(S.G); if
 /* ── SUMMARY / LOG / HELP ── */
 function showSummary(over){
   const G=S.G; const P=G.players;
+  const vm=G.vpMode||'bzf';
   const cell=v=>'<td class="'+(v<0?'neg':v>0?'pos':'')+'">'+(v||0)+'</td>';
   const teamCell=(p,h)=>{ const i=G.outOrder.indexOf(p.seat); const v=h.team||0; return '<td class="'+(v>0?'pos':'')+'">'+(i>=0?'<span class="legend" style="margin-right:5px">'+['1st','2nd','3rd'][i]+'</span>':'')+v+'</td>'; };
-  const rows=P.map(p=>{ const h=p.lastHV; const t=p.lastTotal; return '<tr><td>'+tn(p)+(over&&G.winner&&G.winner.includes(p.seat)?' 🏆':'')+'</td>'+cell(h.star)+cell(h.arrow)+cell(h.tp)+cell(h.rad)+cell(h.diff)+cell(h.bonus)+teamCell(p,h)+cell(h.bomb)+'<td><b>'+(t>0?'+':'')+t+'</b></td><td><b>'+p.total+'</b></td></tr>'; }).join('');
-  modal('<h3>'+(over?'Game over':'Hand '+G.handNum+' complete')+'</h3><div class="sumwrap"><table class="sum"><tr><th></th><th>★</th><th>▲</th><th>TP</th><th>☢</th><th>Diff</th><th>Out</th><th>Team</th><th>Bomb</th><th>Hand</th><th>Total</th></tr>'+rows+'</table></div><div class="legend">Out = 50 VP when a solo goes out. Team = position gone out, then the team bonus for everyone on a team: +25 for each teammate who goes out, and +25 more if the team went out in sequence (1-2, 2-3 or 1-2-3). Diff = 5 VP when you had nothing on the table at trick end. Bomb = 6-card bomb bonus. Names are colored by team: <span class="tn1">Blue</span>, <span class="tn2">Red</span>, <span class="tns">Solo</span>.</div>'+
-    (over?'<button class="mopt pri" onclick="location.reload()">New game</button>':'<button class="mopt pri" id="nh">Next hand</button>'),
+  const rows=P.map(p=>{ const h=p.lastHV; const t=p.lastTotal; return '<tr><td>'+tn(p)+(over&&G.winner&&G.winner.includes(p.seat)?' 🏆':'')+'</td>'+((vm==='bzf'||vm==='both')?cell(h.star)+cell(h.arrow):'')+((vm==='tokoh'||vm==='both')?cell(h.tp):'')+((vm==='bzf'||vm==='both')?cell(h.rad):'')+(vm==='none'?cell(h.place)+cell(h.bank):'')+cell(h.diff)+cell(h.bonus)+teamCell(p,h)+cell(h.bomb)+cell(h.decl)+'<td><b>'+(t>0?'+':'')+t+'</b></td><td><b>'+p.total+'</b></td></tr>'; }).join('');
+  modal('<h3>'+(over?'Game over':'Hand '+G.handNum+' complete')+'</h3><div class="sumwrap"><table class="sum"><tr><th></th>'+((vm==='bzf'||vm==='both')?'<th>★</th><th>▲</th>':'')+((vm==='tokoh'||vm==='both')?'<th>TP</th>':'')+((vm==='bzf'||vm==='both')?'<th>☢</th>':'')+(vm==='none'?'<th>Place</th><th>Trick</th>':'')+'<th>Diff</th><th>Out</th><th>Team</th><th>Bomb</th><th>Decl</th><th>Hand</th><th>Total</th></tr>'+rows+'</table></div><div class="legend">'+(vm==='none'?'Place = 100 / 75 / 50 VP for going out 1st / 2nd / 3rd. ':'')+'Trick = 5 VP per card the owner of the top set still has on their tableau when it is discarded (None mode only; no differential in None mode). Out = 50 VP when a solo goes out. Team = position gone out, then the team bonus for everyone on a team: +25 for each teammate who goes out, and +25 more if the team went out in sequence (1-2, 2-3 or 1-2-3). Diff = 5 VP when you had nothing on the table at trick end. Bomb = max-size bomb bonus. Decl = Laoda / Pinyin declarations: Laoda (go out 1st) +50 / -50, Pinyin (go out) +25 / -25 for the team; if a teammate declared first, a later declarer fails alone and costs only that player. Names are colored by team: <span class="tn1">Blue</span>, <span class="tn2">Red</span>, <span class="tns">Solo</span>.</div>'+
+    (over?'<button class="mopt pri" onclick="UI.quit()">New game</button>':(NET.isGuest()?'<div class="legend" style="text-align:center;margin-top:8px">Waiting for the host to start the next hand…</div>':'<button class="mopt pri" id="nh">Next hand</button>')),
     el=>{ const nh=el.querySelector('#nh'); if(nh) nh.onclick=()=>{ closeModal(); S.sel=[]; E.nextHand(G); drive(); }; });
 }
 function logModal(){ const G=S.G; if(!G) return; modal('<h3>Log</h3><div style="font-size:.88rem;line-height:1.35;max-height:60vh;overflow:auto">'+G.log.slice(-80).reverse().map(l=>'<div style="'+(l.cls==='imp'?'font-weight:700;':'')+(l.cls==='bad'?'color:var(--skull);':'')+'">'+esc(l.msg)+'</div>').join('')+'</div><button class="mopt" onclick="UI.close()">Close</button>'); }
-function menu(){ modal('<h3>Menu</h3><button class="mopt" onclick="UI.close()">Resume</button><button class="mopt" onclick="location.reload()">Quit to setup</button>'); }
+function menu(){ const on=NET.isOnline(); modal('<h3>Menu</h3><button class="mopt" onclick="UI.close()">Resume</button><button class="mopt" onclick="UI.quit()">'+(on?(NET.isGuest()?'Leave game':'End game for everyone'):'Quit to setup')+'</button>'); }
+function quit(){ NET.leave(); setTimeout(()=>location.reload(),300); }
 function help(){
   modal('<h3>How to play</h3><div style="font-size:.9rem;line-height:1.4;color:var(--text2)">'+
+  '<p><b>Scoring mode.</b> Chosen at setup. BZF: cards score Star, Arrow and Radioactive VP. TP: cards score Tokoh Points only. BZF + TP: both sets score. None: no card VP; going out 1st / 2nd / 3rd scores +100 / +75 / +50 instead. Cards that score nothing in the chosen mode are ordinary cards, and only the scored markers are shown. Team and solo bonuses, the nothing-on-table penalty and the 6-card bomb bonus apply in every mode.</p>'+
   '<p><b>Goal.</b> Go out and pile up card VP. Going out has no bonus of its own, except a solo who goes out gets a flat 50 VP. Team bonuses go to everyone on a team: +25 for each teammate who goes out, plus +25 more if they went out in sequence (1-2, 2-3 or 1-2-3). Two teammates out is 50 each (75 in sequence); 1-2-3 is 100 each. The hand ends after 1 (2P), 2 (3P) or 3 (4-6P) players go out.</p>'+
-  '<p><b>Your hand is fixed.</b> You can only play cards that sit next to each other. Select a run of adjacent cards and tap Play.</p>'+
-  '<p><b>Sets.</b> Bombs beat everything, then more cards beat fewer. At equal length: running triple, running pair, full house (triple or quad + pair, higher triple wins; off by default), straight (lower wins), group (higher wins), aggregate (same suit, ranks total 21 or less, higher wins). Naga tops any single or aggregate.</p>'+
+  '<p><b>Hand order.</b> Free Order (default): hands stay sorted by rank (jokers at the right end) and you can select any cards in your hand, not only adjacent ones. Frozen: your hand stays in dealt order and you can only play cards that sit next to each other; select a run of adjacent cards and tap Play. 1 Time Reorder: your starting hand is sorted once, then frozen.</p>'+
+  '<p><b>Sets.</b> Bombs beat everything, then more cards beat fewer. At equal length: running quad (8 suits), running triple, running pair, full house (triple + pair; quad + pair at 6+ suits; quad + triple or pentad + pair at 7+; pentad + triple at 8; the bigger group is stronger, then the higher rank; off by default), straight (lower wins), group (higher wins), aggregate (same suit, ranks total 21 or less, higher wins). Naga is always played alone, but tops any non-bomb set on the table, of any type or size.</p>'+
+  '<p><b>Bomb button.</b> When you hold a bomb you can play right now, a Bomb button appears next to Hint. It lists every playable bomb, strongest first. Tap one, then choose Play bomb or Cancel.</p>'+
   '<p><b>Adding.</b> Tap a green set to add cards to anyone’s set if that makes it the top set. Cards you add belong to the set’s owner; you keep only the Star VP. Your last cards must go on your own tableau.</p>'+
-  '<p><b>Passing</b> is permanent for the rest of that trick, with one exception: you may still play a bomb of your own later if you hold one, even after passing. Passing is not allowed on a singleton set (a single card or an aggregate) while you can play a single card on it, as long as every set on the table is a singleton set; you may play a bigger set instead. Once a non-singleton set has been played this trick, you may pass. Someone else\'s bomb does not un-pass you — only playing your own bomb makes you active again. When all but one have passed, the trick ends: players other than the top-set holder and last-card player pay a flat 5 VP if they have no cards on their tableau at all, passers may cannibalize one card from those two tableaus, everyone may retrieve one card, ☢ is charged, and everything is discarded.</p>'+
-  '<p><b>Mulai.</b> The lowest-VP player holds it and starts. Playing it makes a wish for a rank that the next player able must play.</p>'+
-  '<p><b>6-card bombs</b> score 30 VP when discarded (15 each for the owner and the player who completed it, if another player did), and their ☢ cards score nothing.</p><p><b>Team modes.</b> All Solo makes every player their own team: every player&#39;s Arrow is pooled together across the whole table, and the full pool is shared in full by every player who goes out that hand. If a player does not go out, they get none of the pool, even though their own discards contributed to it.</p><p><b>VP.</b> If a bomb tops the Naga, the bomb’s owner takes the Naga’s +25 Arrow instead of the Naga’s owner. Star pays when played. TP pays when discarded. Arrow is pooled per team, and at hand end every teammate receives the full pool. Solos (the top scorers) earn no Arrow but do pay ☢. Cards left in hand cost nothing.</p>'+
+  '<p><b>Passing</b> only lasts until someone plays: after any play (a bomb or not), everyone who passed may play again on their next turn. Passing is not allowed on a singleton set (a single card or an aggregate) while you can play a single card on it, as long as every set on the table is a singleton set; you may play a bigger set instead. Once a non-singleton set has been played this trick, you may pass. When everyone else has passed since the last play, the trick ends: players other than the top-set holder and last-card player pay a flat 5 VP if they have no cards on their tableau at all, passers may cannibalize one card from those two tableaus, everyone may retrieve one card, ☢ is charged, and everything is discarded.</p>'+
+  '<p><b>Mulai.</b> The lowest-VP player holds it and starts. Playing it makes a wish for a rank — whoever can next play that rank must, until someone does.</p>'+
+  '<p><b>Max-size bombs</b> (as many cards as there are suits in play: 4 at 2–4 players, 5 at 5, and so on up to 8) score 30 VP when discarded (15 each for the owner and the player who completed it, if another player did), and their ☢ cards score nothing.</p><p><b>Team modes.</b> All Solo makes every player their own team: every player&#39;s Arrow is pooled together across the whole table, and the full pool is shared in full by every player who goes out that hand. If a player does not go out, they get none of the pool, even though their own discards contributed to it.</p><p><b>VP.</b> If a bomb tops the Naga, the bomb’s owner takes the Naga’s +25 Arrow instead of the Naga’s owner. Star pays when played. TP pays when discarded. Arrow is pooled per team, and at hand end every teammate receives the full pool. Solos (the top scorers) earn no Arrow but do pay ☢. Cards left in hand cost nothing.</p>'+
   '<p style="color:var(--text3)">Ranks: A = Ace (1), then 2–14 (11 Page, 12 Knight, 13 Queen, 14 King). Jokers: Na Naga, Ga Garuda, 0 Mulai (rank 0), An Anjing. Card marks: ★ Star, ▲ Arrow, ▼ negative Arrow (King), ☢ radioactive, TP Tokoh Points.</p></div><button class="mopt" onclick="UI.close()">Close</button>');
 }
 
 document.addEventListener('DOMContentLoaded',initSetup);
 if(document.readyState!=='loading') initSetup();
-return {start,help,logModal,menu,reveal,unpeek,close:closeModal,S,drive,render,toggleSel,doPlay,doAdd,send,prompt};
+
+/* ── ONLINE PLAY (PeerJS, host-authoritative) ──
+   The host's browser runs the one real game engine. Guests send their decisions to the host, which validates them against the
+   engine and sends every guest a masked snapshot (other players' hands replaced by card-count placeholders). A guest who drops is
+   replaced by the AI until they rejoin with the same room code and name. */
+const NET = (function(){
+  const PFX='bzfsh-', BEAT=5000, STALE=20000;
+  const PeerC=()=>window.__BZF_PEER||window.Peer;
+  const now=()=>Date.now();
+  const clean=v=>String(v||'').replace(/[<>&"'`]/g,'').trim().slice(0,14);
+  const code4=()=>{ const a='ABCDEFGHJKLMNPQRSTUVWXYZ'; let s=''; for(let i=0;i<4;i++) s+=a[Math.floor(Math.random()*a.length)]; return s; };
+  const nm=s=>String(s||'').toLowerCase();
+  let beat=null;
+  function startBeat(){ clearInterval(beat); beat=setInterval(tick,BEAT); }
+  function tick(){ const net=S.net; if(!net) return;
+    if(net.role==='host'){ net.guests.forEach(g=>{ if(g.connected&&g.conn){ try{ g.conn.send({t:'ping'}); }catch(e){} if(now()-g.seen>STALE) hDrop(g.conn); } }); }
+    else if(net.role==='guest' && net.started && !net.lost && now()-net.lastPing>STALE){ gLost(); } }
+
+  /* ── HOST ── */
+  function host(){
+    const P=PeerC(); if(!P){ toast('Online play needs the PeerJS library, which did not load. Check your connection and reload.'); return; }
+    if(S.net) return;
+    const first=([...$('slots').querySelectorAll('input')][0]||{}).value;
+    const net=S.net={role:'host',code:null,peer:null,hostName:(clean(first)&&nm(clean(first))!=='you')?clean(first):'Host',guests:[],started:false,mySeat:0};
+    const open=()=>{ net.code=code4(); const peer=new P(PFX+net.code); net.peer=peer;
+      peer.on('open',()=>{ lobbyModal(); startBeat(); });
+      peer.on('error',e=>{ if(e&&e.type==='unavailable-id'){ try{peer.destroy();}catch(x){} open(); } else toast('Online error: '+((e&&e.type)||e)); });
+      peer.on('connection',conn=>{ conn.on('data',m=>hMsg(conn,m)); conn.on('close',()=>hDrop(conn)); conn.on('error',()=>hDrop(conn)); }); };
+    open();
+  }
+  const gOf=conn=>S.net.guests.find(g=>g.conn===conn);
+  function hMsg(conn,m){
+    const net=S.net; if(!net||net.role!=='host'||!m||typeof m!=='object') return;
+    if(m.t==='hello'){ hHello(conn,m); return; }
+    const g=gOf(conn); if(!g) return; g.seen=now();
+    if(m.t==='act') hAct(g,m); else if(m.t==='leave') hDrop(conn,true);
+  }
+  function rej(conn,msg){ try{ conn.send({t:'reject',msg}); }catch(e){} }
+  function hHello(conn,m){
+    const net=S.net, name=clean(m.name); if(!name){ rej(conn,'Enter a name.'); return; }
+    if(nm(name)===nm(net.hostName)){ rej(conn,'That name is already in use.'); return; }
+    const ex=net.guests.find(g=>nm(g.name)===nm(name));
+    if(!net.started){
+      if(ex && ex.connected && ex.conn!==conn){ rej(conn,'That name is already in use.'); return; }
+      if(ex){ ex.conn=conn; ex.connected=true; ex.seen=now(); }
+      else{ if(net.guests.length>=S.setup.n-1){ rej(conn,'This room is full.'); return; } net.guests.push({name,conn,connected:true,seen:now(),seat:null}); }
+      try{ conn.send({t:'welcome',started:false}); }catch(e){}
+      lobbyBroadcast(); lobbyModal(); return;
+    }
+    if(ex && !ex.connected){
+      ex.conn=conn; ex.connected=true; ex.seen=now();
+      try{ conn.send({t:'welcome',started:true,seat:ex.seat}); }catch(e){}
+      if(S.G) S.G.log.push({msg:ex.name+' is back.',cls:'imp'});
+      clearTimeout(S.timer);   /* the AI may have been about to act for them */
+      drive(); return;
+    }
+    rej(conn, ex?'That name is already connected.':'This game has already started.');
+  }
+  function hDrop(conn){
+    const net=S.net; if(!net||net.role!=='host') return; const g=gOf(conn); if(!g) return;
+    try{ conn.close(); }catch(e){}
+    if(!net.started){ net.guests=net.guests.filter(x=>x!==g); lobbyBroadcast(); lobbyModal(); return; }
+    if(!g.connected) return;
+    g.connected=false; g.conn=null;
+    toast(g.name+' disconnected. An AI plays their seat until they return.');
+    if(S.G){ S.G.log.push({msg:g.name+' disconnected — an AI plays their seat until they return.',cls:'bad'}); const nd=E.need(S.G); if(nd&&nd.seat===g.seat) drive(); else render(); }
+  }
+  function hAct(g,m){
+    const G=S.G, net=S.net; if(!G||!net.started||!m.resp||typeof m.resp!=='object') return;
+    const nd=E.need(G);
+    if(!nd||nd.seat!==g.seat){ try{ g.conn.send({t:'err',msg:'It is not your decision right now.'}); }catch(e){} return; }
+    let r; try{ r=E.respond(G,m.resp); }catch(e){ r={ok:false,err:'Bad request.'}; }
+    if(!r||!r.ok){ try{ g.conn.send({t:'err',msg:(r&&r.err)||'Not allowed.'}); }catch(e){} return; }
+    drive();
+  }
+  function seatOnline(seat){ const net=S.net; if(!net||net.role!=='host') return true; if(seat===net.mySeat) return true; const g=net.guests.find(x=>x.seat===seat); return !!(g&&g.connected&&g.conn); }
+  function lobbyNames(){ const net=S.net; return [net.hostName].concat(net.guests.map(g=>g.name)); }
+  function lobbyBroadcast(){ const net=S.net; if(!net||net.started) return; net.guests.forEach(g=>{ if(g.connected&&g.conn){ try{ g.conn.send({t:'lobby',code:net.code,n:S.setup.n,names:lobbyNames()}); }catch(e){} } }); }
+  function lobbyModal(){
+    const net=S.net; if(!net||net.role!=='host'||net.started) return;
+    const rows=lobbyNames().map((n,i)=>'<div class="legend">Seat '+(i+1)+' — '+esc(n)+(i===0?' (host)':'')+'</div>').join('');
+    modal('<h3>Online room</h3><p>Tell your players this room code:</p><div class="roomcode">'+net.code+'</div><p>Seats: '+S.setup.n+'. Empty seats are played by AI.</p>'+rows+
+      '<button class="mopt pri" id="o-go">Start game</button><button class="mopt" id="o-x">Cancel</button>',el=>{
+      el.querySelector('#o-go').onclick=hStart;
+      el.querySelector('#o-x').onclick=()=>{ closeModal(); leave(); };
+    });
+  }
+  function hStart(){
+    const net=S.net; if(!net||net.started) return; net.started=true; closeModal();
+    const n=S.setup.n, names=[net.hostName], human=[true];
+    net.guests.forEach((g,i)=>{ g.seat=i+1; names.push(g.name); human.push(true); });
+    const ai=['North','East','South','West','Zephyr']; let k=0;
+    while(names.length<n){ names.push(ai[k++%5]+' (AI)'); human.push(false); }
+    startGame(names,human,n);
+  }
+
+  /* ── MASKING ── */
+  function snapFor(seat){
+    const G=S.G, net=S.net;
+    const o=JSON.parse(JSON.stringify(G,(k,v)=>{ if(k==='rng'||k==='_R') return undefined; if(v instanceof Set) return {__set:[...v]}; return v; }));
+    o.players.forEach((p,i)=>{ if(i!==seat){ p.hand=p.hand.map((c,j)=>({id:-1-j-i*100,rank:0,suit:0,joker:null,hidden:true})); p.hands=[]; p.declined=[]; } });
+    o.log=o.log.slice(-120);
+    return {G:o,viewSeat:seat,off:net.guests.filter(g=>!g.connected).map(g=>g.seat)};
+  }
+  function revive(o){
+    if(o.exempt&&o.exempt.__set) o.exempt=new Set(o.exempt.__set);
+    const all=o.players.flatMap(p=>p.tableau);
+    if(o.top) o.top=all.find(m=>m.id===o.top.id)||o.top;
+    return o;
+  }
+  function broadcast(){
+    const net=S.net; if(!net||net.role!=='host'||!net.started) return;
+    net.guests.forEach(g=>{ if(g.connected&&g.conn){ try{ g.conn.send({t:'state',snap:snapFor(g.seat)}); }catch(e){} } });
+  }
+
+  /* ── GUEST ── */
+  function joinModal(msg){
+    modal('<h3>Join an online game</h3>'+(msg?'<p style="color:#b03030">'+esc(msg)+'</p>':'')+'<p>Room code (4 letters)</p><input id="j-code" class="setup-input" maxlength="4" style="text-transform:uppercase" autocomplete="off"><p>Your name</p><input id="j-name" class="setup-input" maxlength="14" autocomplete="off"><button class="mopt pri" id="j-go">Join</button><button class="mopt" onclick="UI.close()">Cancel</button>',el=>{
+      try{ const sv=JSON.parse(localStorage.getItem('bzfsh-join')||'null'); if(sv){ el.querySelector('#j-code').value=sv.code||''; el.querySelector('#j-name').value=sv.name||''; } }catch(e){}
+      el.querySelector('#j-go').onclick=()=>{ const c=el.querySelector('#j-code').value.trim().toUpperCase(), n=clean(el.querySelector('#j-name').value); if(c.length!==4||!n){ joinModal('Enter the 4-letter code and a name.'); return; } try{ localStorage.setItem('bzfsh-join',JSON.stringify({code:c,name:n})); }catch(e){} gConnect(c,n); };
+    });
+  }
+  function join(){ if(!PeerC()){ toast('Online play needs the PeerJS library, which did not load. Check your connection and reload.'); return; } if(S.net) return; joinModal(); }
+  function gConnect(code,name){
+    const P=PeerC(); const net=S.net={role:'guest',code,name,peer:null,conn:null,started:false,lastPing:now(),lost:false,tries:0,rejected:false};
+    modal('<h3>Connecting…</h3><p>Looking for room '+esc(code)+'.</p><button class="mopt" id="j-x">Cancel</button>',el=>{ el.querySelector('#j-x').onclick=()=>{ closeModal(); leave(); }; });
+    newPeer(); startBeat();
+  }
+  function newPeer(){
+    const net=S.net, P=PeerC(); try{ net.peer&&net.peer.destroy(); }catch(e){}
+    net.conn=null; const peer=new P(); net.peer=peer;
+    peer.on('open',()=>{ if(net.peer===peer) dial(); });
+    peer.on('error',e=>{ if(net.peer!==peer) return; if(net.started){ scheduleRetry(); } else if(e&&e.type==='peer-unavailable'){ failJoin('No room with that code.'); } else failJoin('Could not connect ('+((e&&e.type)||'error')+').'); });
+  }
+  function dial(){
+    const net=S.net; if(!net) return; const conn=net.peer.connect(PFX+net.code,{reliable:true}); net.conn=conn;
+    conn.on('open',()=>{ net.lost=false; net.lastPing=now(); conn.send({t:'hello',name:net.name}); });
+    conn.on('data',m=>gMsg(m));
+    conn.on('close',()=>{ if(net.conn===conn) gLost(); }); conn.on('error',()=>{ if(net.conn===conn) gLost(); });
+  }
+  function failJoin(msg){ const net=S.net; if(!net) return; try{ net.peer&&net.peer.destroy(); }catch(e){} S.net=null; closeModal(); joinModal(msg); }
+  function gLost(){
+    const net=S.net; if(!net||net.role!=='guest'||net.leaving) return;
+    if(!net.started){ if(!net.rejected) failJoin('Connection lost.'); return; }
+    if(net.lost && net.retryT) return; net.lost=true; scheduleRetry();
+  }
+  function scheduleRetry(){
+    const net=S.net; if(!net||net.leaving) return; net.lost=true; clearTimeout(net.retryT);
+    net.tries++;
+    if(net.tries>40){ modal('<h3>Disconnected</h3><p>Could not reach the host.</p><button class="mopt pri" onclick="location.reload()">Back to setup</button>'); return; }
+    toast('Connection lost — reconnecting…');
+    net.retryT=setTimeout(()=>{ net.retryT=null; if(S.net===net) newPeer(); },3000);
+  }
+  function gMsg(m){
+    const net=S.net; if(!net||net.role!=='guest'||!m||typeof m!=='object') return; net.lastPing=now();
+    switch(m.t){
+      case 'ping': try{ net.conn.send({t:'pong'}); }catch(e){} break;
+      case 'welcome': net.tries=0; if(!m.started) waitModal([]); break;
+      case 'reject': net.rejected=true; failJoin(m.msg||'Could not join.'); break;
+      case 'lobby': if(!net.started) waitModal(m.names||[],m.n); break;
+      case 'state': gState(m.snap); break;
+      case 'err': toast(m.msg||'Not allowed.'); if(S.G) drive(); break;
+      case 'end': net.leaving=true; modal('<h3>Game ended</h3><p>The host ended the game.</p><button class="mopt pri" onclick="location.reload()">Back to setup</button>'); break;
+    }
+  }
+  function waitModal(names,n){
+    modal('<h3>Waiting for the host</h3><p>You are in room <b>'+esc(S.net.code)+'</b>.</p>'+(names.length?names.map((x,i)=>'<div class="legend">Seat '+(i+1)+' — '+esc(x)+'</div>').join(''):'')+'<p>The game starts when the host presses Start.</p><button class="mopt" id="j-x">Leave</button>',el=>{ el.querySelector('#j-x').onclick=()=>{ closeModal(); leave(); }; });
+  }
+  function gState(snap){
+    const net=S.net; if(!net||!snap) return; net.tries=0; net.lost=false;
+    const G=revive(snap.G); S.G=G; E.setVPMode(G.vpMode); S.viewSeat=snap.viewSeat; net.off=snap.off||[];
+    const mine=G.players[S.viewSeat].hand.map(c=>c.id); S.sel=S.sel.filter(id=>mine.includes(id));
+    if(!net.started){ net.started=true; closeModal(); document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $('game-screen').classList.add('active'); }
+    drive();
+  }
+  function sendAct(resp){
+    const net=S.net; if(!net||net.role!=='guest') return false;
+    if(!net.conn||net.lost){ toast('Not connected to the host.'); return false; }
+    try{ net.conn.send({t:'act',resp}); return true; }catch(e){ toast('Not connected to the host.'); return false; }
+  }
+  function leave(){
+    const net=S.net; if(!net) return; net.leaving=true; clearInterval(beat);
+    try{
+      if(net.role==='guest'&&net.conn) net.conn.send({t:'leave'});
+      if(net.role==='host') net.guests.forEach(g=>{ if(g.conn) try{ g.conn.send({t:'end'}); }catch(e){} });
+    }catch(e){}
+    setTimeout(()=>{ try{ net.peer&&net.peer.destroy(); }catch(e){} },200);
+    S.net=null;
+  }
+  return {host,join,broadcast,seatOnline,sendAct,leave,isGuest:()=>!!(S.net&&S.net.role==='guest'),isOnline:()=>!!S.net};
+})();
+
+return {start,help,logModal,menu,quit,reveal,unpeek,close:closeModal,S,drive,render,toggleSel,doPlay,doAdd,send,prompt,bombModal,bombPlays,hostOnline:NET.host,joinOnline:NET.join,NET};
 })();
 window.__bzf = UI;
 </script>
