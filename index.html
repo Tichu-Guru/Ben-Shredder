@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Ben Shedder · Copyright (c) 2026 Ruben Zurita Ojeda. All rights reserved. No copying, redistribution or modification without written permission. -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -139,8 +140,8 @@ table.sum{width:100%;border-collapse:collapse;font-size:.72rem;} table.sum th,ta
   .opp{padding:3px 6px;border-radius:8px;min-width:0;}
   .ph{gap:4px;font-size:.85rem;} .ph .nm{font-size:.76rem;} .ph .cnt{font-size:.72rem;} .badge{font-size:.62rem;padding:0 5px;}
   .melds{margin-top:3px;gap:4px;zoom:.72;}
-  .mine{position:sticky;bottom:var(--dockh,120px);z-index:3;margin:0 6px 4px;padding:3px 6px;border-radius:8px;display:flex;align-items:center;gap:6px;}
-  .mine .ph{flex:0 0 auto;flex-wrap:nowrap;} .mine .melds{flex:1 1 auto;flex-wrap:nowrap;overflow-x:auto;margin-top:0;min-height:0;}
+  .mine{position:sticky;bottom:var(--dockh,120px);z-index:3;margin:0 6px 4px;padding:3px 6px;border-radius:8px;display:block;}
+  .mine .melds{flex-wrap:wrap;overflow-x:hidden;overflow-y:auto;max-height:34vh;margin-top:3px;min-height:0;}
   #dock{padding:4px 6px calc(6px + env(safe-area-inset-bottom));}
   #hand{padding:10px 4px 3px;} #hand .card{--ch:60px;} .card.sel{transform:translateY(-8px);}
   #hint{font-size:.78rem;margin-top:2px;min-height:0;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
@@ -156,7 +157,8 @@ table.sum{width:100%;border-collapse:collapse;font-size:.72rem;} table.sum th,ta
   <div class="setup-box">
     <div class="game-title">BEN SHEDDER</div>
     <div class="game-subtitle">A BZF DECK CARD GAME · WORKING TITLE</div>
-    <div class="version-tag">v1.53 · local and online play · AI fills empty seats</div>
+    <div class="version-tag">v1.63 · local and online play · AI fills empty seats</div>
+    <div class="version-tag" style="margin-top:2px;font-size:.7rem">© 2026 Ruben Zurita Ojeda. All rights reserved.</div>
     <button class="help-link" onclick="UI.help()">How to play</button>
 
     <div class="setup-row"><span class="setup-label">GAME MODE</span>
@@ -183,7 +185,7 @@ table.sum{width:100%;border-collapse:collapse;font-size:.72rem;} table.sum th,ta
       <div class="btn-group" id="sets-group">
         <button class="btn-opt sel" data-k="a">Aggregates</button><button class="btn-opt sel" data-k="b">Groups</button>
         <button class="btn-opt sel" data-k="c">Straights</button><button class="btn-opt" data-k="d">Running sets</button><button class="btn-opt" data-k="e">Full houses</button></div>
-      <div class="vp-hint">Each option allows its regular and bomb sets. Singles are always allowed, and a Garuda can always make an aggregate.</div></div>
+      <div class="vp-hint">Each option allows its regular and bomb sets. A full house is 2 or more groups of different ranks whose sizes step down by one (3+2, 4+3, 4+3+2, 5+4 ...). Singles are always allowed, and a Garuda can always make an aggregate.</div></div>
 
     <div class="setup-row"><span class="setup-label">DUPLICATE CARDS</span>
       <div class="btn-group" id="dup-group">
@@ -214,11 +216,6 @@ table.sum{width:100%;border-collapse:collapse;font-size:.72rem;} table.sum th,ta
       <div class="btn-group" id="ma-group">
         <button class="btn-opt sel" data-v="0">Off</button><button class="btn-opt" data-v="1">On</button></div>
       <div class="vp-hint"><b>On:</b> before each hand the table shows 2 Major cards per player and the lowest-VP player picks first. Your pick sits in your Arcana space (it stays across hands) and you may play one per trick, on your own turn, for an immediate bonus: a suit card pays +5★ per card of that suit on all tableaus, The World +5★ per different suit, The Star doubles all Star VP until the trick ends. Jokers count as any one suit. Used cards are discarded and recycled. <span id="ma-gate" style="display:none"><b>Requires VP Scoring BZF or BZF + TP.</b></span></div></div>
-
-    <div class="setup-row"><span class="setup-label">PICK UPS <span style="font-weight:400;letter-spacing:0;color:var(--text3)">(TRIAL)</span></span>
-      <div class="btn-group" id="pu-group">
-        <button class="btn-opt sel" data-v="0">Off</button><button class="btn-opt" data-v="1">On</button></div>
-      <div class="vp-hint">Trial feature: on your turn, instead of playing or passing, you may Pick Up exactly 1 card from a set belonging to another player (never the current top set, never a bomb, and never a joker card). Picking up counts as passing — it lasts only until someone plays, like any pass. Capped at 1 pick-up per player per trick. A wish that forces you to play still overrides this.</div></div>
 
     <div class="setup-row"><span class="setup-label">TARGET VICTORY POINTS</span>
       <div class="btn-group" id="vp-group">
@@ -314,7 +311,7 @@ function labelOf(d){
     case 'runpair': s = 'Running pair '+RSHORT[d.start]+'–'+RSHORT[d.start+d.len/2-1]; break;
     case 'runtriple': s = 'Running triple '+RSHORT[d.start]+'–'+RSHORT[d.start+1]; break;
     case 'runquad': s = 'Running quad '+RSHORT[d.start]+'–'+RSHORT[d.start+1]; break;
-    case 'fullhouse': s = 'Full house '+RSHORT[d.mainRank]+'×'+d.mainN+' + '+RSHORT[d.pairRank]+'×'+d.pairN; break;
+    case 'fullhouse': s = 'Full house '+d.groups.map(g=>RSHORT[g.rank]+'×'+g.n).join(' + '); break;
     default: s = d.kind;
   }
   if(d.bomb){ s += ' — BOMB ('+({0:'aggregate',1:'group',2:'straight flush',2.5:'full house',3:'paired flush',4:'triple flush',5:'quad flush'})[d.tier]+')'; }
@@ -326,7 +323,7 @@ function labelOf(d){
 const SGN = o => o.stHigh ? 1 : -1;
 E.describe = function(cards, o){
   const res = []; const n = cards.length;
-  if(!n || n>(o.max||6)) return res;   /* o.max = largest set allowed (= number of suits in play) */
+  if(!n || n>(o.max||99)) return res;   /* no size cap: each set type has its own natural limit */
   const nat = cards.filter(c=>!c.joker);
   const hasG = cards.some(c=>c.joker==='garuda');
   const hasM = cards.some(c=>c.joker==='mulai');
@@ -397,28 +394,27 @@ E.describe = function(cards, o){
     };
     tryC(2,n/2); if(n===6) tryC(3,2); if(n===8) tryC(4,2);   /* 8 cards (8 suits): 2 per rank over 4 ranks, or a running quad (4 per rank over 2 ranks) */
   }
-  /* FULL HOUSE: triple + pair (5 cards) or quad + pair (6 cards); a bomb if no group repeats a suit (never with Garuda) */
-  if(o.e && n>=5 && n<=8){
+  /* FULL HOUSE: 2 or more groups of different ranks whose sizes step down by exactly 1, smallest group 2 or more (3+2, 4+3, 4+3+2, 5+4, 6+5+4+3 ...);
+     a bomb if no card repeats a suit (never with Garuda). Bigger top group wins, then the group ranks in order. */
+  if(o.e && n>=5){
     const cnt = {}; nat.forEach(c=>{ (cnt[c.rank]=cnt[c.rank]||[]).push(c); });
     const ranks = Object.keys(cnt).map(Number);
-    if(ranks.length===2){
-      const SHAPES = {5:[[3,2]],6:[[4,2]],7:[[4,3],[5,2]],8:[[5,3]]};   /* big group + small group; 7-card shapes need 7 suits, the 8-card one 8 */
-      const tryAssign = (bump,want)=>{
+    if(ranks.length>=2){
+      const tryAssign = (bump)=>{
         const c = {}; ranks.forEach(r=>{ c[r] = cnt[r].length + (bump===r?1:0); });
         const sorted = ranks.slice().sort((a,b)=>c[b]-c[a]||b-a);
-        if(c[sorted[0]]!==want[0] || c[sorted[1]]!==want[1]) return;
-        const main = sorted[0], pr = sorted[1];
-        const distinct = arr => new Set(arr.map(x=>x.suit)).size===arr.length;
-        const noOverlap = new Set(cnt[main].map(x=>x.suit).concat(cnt[pr].map(x=>x.suit))).size===cnt[main].length+cnt[pr].length;
-        const bomb = !hasG && distinct(cnt[main]) && distinct(cnt[pr]) && noOverlap;
+        for(let k=1;k<sorted.length;k++) if(c[sorted[k]]!==c[sorted[k-1]]-1) return;
+        if(c[sorted[sorted.length-1]]<2) return;
+        const bomb = !hasG && new Set(nat.map(x=>x.suit)).size===nat.length;
         const rk = x => x.joker==='garuda' ? bump : x.rank;
-        const ord = cards.slice().sort((a,b)=>{ const ma = rk(a)===main?0:1, mb = rk(b)===main?0:1; return ma-mb || a.suit-b.suit; });
-        res.push(finalize(mkD('fullhouse',n,{cards:ord,rankKey:want[0]*100+main,start:0,bomb,tier:bomb?2.5:-1,tieKey:want[0]*100+main,garudaAs:hasG?bump:null,mainRank:main,pairRank:pr,mainN:want[0],pairN:want[1]})));
+        const pos = r => sorted.indexOf(r);
+        const ord = cards.slice().sort((a,b)=> pos(rk(a))-pos(rk(b)) || a.suit-b.suit);
+        const groups = sorted.map(r=>({rank:r,n:c[r]}));
+        let key = c[sorted[0]]; for(let q=0;q<7;q++) key = key*100 + (sorted[q]||0);   /* fixed width: top group size first, then each group's rank in order */
+        res.push(finalize(mkD('fullhouse',n,{cards:ord,rankKey:key,start:0,bomb,tier:bomb?2.5:-1,tieKey:key,garudaAs:hasG?bump:null,groups,mainRank:sorted[0],pairRank:sorted[1],mainN:c[sorted[0]],pairN:c[sorted[1]]})));
       };
-      SHAPES[n].forEach(want=>{
-        if(!hasG){ if(nat.length===n) tryAssign(null,want); }
-        else if(nat.length===n-1){ ranks.forEach(r=>tryAssign(r,want)); }
-      });
+      if(!hasG){ if(nat.length===n) tryAssign(null); }
+      else if(nat.length===n-1){ ranks.forEach(r=>tryAssign(r)); }
     }
   }
   return res;
@@ -447,8 +443,8 @@ E.newGame = function(cfg){
   E.setVPMode(cfg.vpMode);
   const n = cfg.n;
   const HO = ['frozen','once','free'].includes(cfg.handOrder) ? cfg.handOrder : (cfg.sortedHand ? 'once' : 'frozen');
-  const G = { n, opts:Object.assign({a:true,b:true,c:true,d:false,e:false},cfg.opts||{},{max:(n<=4?4:n),stHigh:cfg.straights==='high'}), dupSets:(Array.isArray(cfg.dupSets)?cfg.dupSets:(cfg.dupLevel>0?[1,2,3,4].slice(0,cfg.dupLevel):[])).map(Number).filter((k,i,a)=>k>=1&&k<=4&&a.indexOf(k)===i).sort(), dups:false,
-    target:cfg.target||700, freeze:!!cfg.freezeTeams, allSolo:!!cfg.allSolo, handOrder:HO, sortedHand:HO==='once', pickups:!!cfg.pickups, vpMode:(cfg.vpMode==='tokoh'||cfg.vpMode==='none'||cfg.vpMode==='both')?cfg.vpMode:'bzf', nSuits:n<=4?4:n, handNum:0,
+  const G = { n, opts:Object.assign({a:true,b:true,c:true,d:false,e:false},cfg.opts||{},{max:99,stHigh:cfg.straights==='high'}), dupSets:(Array.isArray(cfg.dupSets)?cfg.dupSets:(cfg.dupLevel>0?[1,2,3,4].slice(0,cfg.dupLevel):[])).map(Number).filter((k,i,a)=>k>=1&&k<=4&&a.indexOf(k)===i).sort(), dups:false,
+    target:cfg.target||700, freeze:!!cfg.freezeTeams, allSolo:!!cfg.allSolo, handOrder:HO, sortedHand:HO==='once', pickups:true, vpMode:(cfg.vpMode==='tokoh'||cfg.vpMode==='none'||cfg.vpMode==='both')?cfg.vpMode:'bzf', nSuits:n<=4?4:n, handNum:0,
     rng:mulberry(cfg.seed!=null?cfg.seed:(Date.now()%2147483647)), maOn:!!cfg.majors&&(cfg.vpMode==null||cfg.vpMode==='bzf'||cfg.vpMode==='both'), players:[], log:[], phase:'setup', pending:null, mid:0, over:false, winner:null, needOut:NEED_OUT[n] };
   for(let i=0;i<n;i++) G.players.push({seat:i,name:(cfg.names&&cfg.names[i])||('Player '+(i+1)),free:HO==='free', human:!!(cfg.human&&cfg.human[i]),
     level:(cfg.levels&&cfg.levels[i])||cfg.level||'medium',total:0,hand:[],hands:[],declined:[],tableau:[],out:false,passed:false,team:0,solo:false,hv:zeroHV(),lastHV:zeroHV()});
@@ -508,9 +504,10 @@ E.freeSort = freeSort;
 E.startHand = function(G){
   G.handNum++; G.over=false;
   const P = G.players;
-  const deck = shuffle(G, buildDeck(G));
-  const hs = 15 + dupRanks(G.dupSets).length;   /* 15 / 20 / 23 / 25 (jokers = suits, so every table size deals evenly) */
-  const hands = []; for(let i=0;i<deck.length/hs;i++) hands.push(deck.slice(i*hs,(i+1)*hs));
+  const full = buildDeck(G);
+  const plain = shuffle(G, full.filter(c=>!c.joker)), jokers = shuffle(G, full.filter(c=>c.joker));
+  const ps = 14 + dupRanks(G.dupSets).length;   /* plain cards per hand; each hand also gets exactly 1 joker (jokers = suits = hands), so 15 / 20 / 23 / 25 */
+  const hands = []; for(let i=0;i<jokers.length;i++){ const h = plain.slice(i*ps,(i+1)*ps); h.splice(Math.floor(G.rng()*(h.length+1)),0,jokers[i]); hands.push(h); }
   P.forEach(p=>{ p.hands=[]; p.hand=[]; p.declined=[]; p.tableau=[]; p.out=false; p.passed=false; p.hv=zeroHV(); p.pickedUpThisTrick=false; p.decl=null; p.declOpen=true; });
   G.declLog=[]; G.starDbl=false; G.trickMA=[]; G._maDone=false;
   G.outOrder=[]; G.teamPaid={}; G.bombDeclined={}; G.pool={}; G.stale=0; G.top=null; G.last=null; G.wish=null; G.passOrder=[]; G.starter=null; G.trickNo=0; G.reroundNoPlay=false; G.reround=false; G.turnDisplaced=false;
@@ -580,6 +577,8 @@ function beginPlay(G){
 /* ═══ MAJOR ARCANA (v1: VP cards) ═══ */
 const MA_SUIT_NAME = ['High Priestess','Emperor','Magician','Sun','Empress','Moon','Emergence','Death'];   /* printed deck: Hearts, Spades, Clubs, Sun, Diamonds, Moon, Crown, Pawn */
 E.MA_SUIT_NAME = MA_SUIT_NAME;
+const MA_SUIT_NUM = [2,4,1,19,3,18,20,13];   /* tarot numbers: High Priestess 2, Emperor 4, Magician 1, Sun 19, Empress 3, Moon 18, Emergence 20, Death 13 */
+E.maNum = function(c){ return c.key==='cosmos' ? 21 : c.key==='star' ? 17 : MA_SUIT_NUM[c.suit]; };
 function initMA(G){
   const deck = []; let id = 900;
   for(let s=0;s<G.nSuits;s++) deck.push({id:++id,key:'suit',suit:s,name:MA_SUIT_NAME[s]});
@@ -793,7 +792,7 @@ E.playOptions = function(G,seat,ids){
   const why = (a,b)=>{ if(!b) return ''; if(!!a.bomb!==!!b.bomb) return a.bomb?'bomb beats non-bomb':'non-bomb cannot beat a bomb'; if(a.bomb) return a.len!==b.len?'size '+a.len+' vs '+b.len : a.tier!==b.tier?'bomb tier '+a.tier+' vs '+b.tier : 'tie key '+a.tieKey+' vs '+b.tieKey; return a.len!==b.len?'size '+a.len+' vs '+b.len : a.typeOrder!==b.typeOrder?'type '+a.typeOrder+' vs '+b.typeOrder : 'rank '+a.rankKey+' vs '+b.rankKey+' (equal or lower)'; };
   return {options,err:options.length?null:(G.top&&G.top.desc.kind==='naga'?'Only a bomb can top the Naga.':'That does not beat the top set. Yours: '+dx(descs[0])+' vs TOP: '+dx(td)+' — '+why(descs[0],td)+'.')};
 };
-function addable(m,G){ return m && m.kind!=='naga' && m.kind!=='anjing' && m.kind!=='runtriple' && m.kind!=='runquad' && m.len<G.opts.max; }
+function addable(m,G){ return m && m.kind!=='naga' && m.kind!=='anjing' && m.kind!=='runtriple' && m.kind!=='runquad' && m.len<G.opts.max && !m.locked; }
 function addKindOK(mk,ck){
   switch(mk){
     case 'single': return ck!=='single';
@@ -814,6 +813,7 @@ E.addOptions = function(G,seat,mid,ids){
   if(idx.length===p.hand.length && m.owner!==seat) return {options:[],err:'Your last cards must go on your own tableau.'};
   const cards = idx.map(i=>p.hand[i]);
   if(cards.some(c=>c.joker==='naga'||c.joker==='anjing')) return {options:[],err:'That card cannot be added.'};
+  if(m.locked) return {options:[],err:'That set is locked.'};
   if(m.desc.bomb && cards.some(c=>c.joker==='garuda')) return {options:[],err:'Garuda cannot join a bomb.'};
   const union = m.cards.map(x=>x.c).concat(cards);
   const descs = E.describe(union,G.opts).filter(d=>addKindOK(m.kind,d.kind));
@@ -826,7 +826,7 @@ function displaceOptions(G,seat){
   const p = G.players[seat]; const out = [];
   if(G.turnDisplaced || p.passed) return out;
   G.players.forEach(q=>q.tableau.forEach(m=>{
-    if(m.desc.bomb || m.len<2 || m.kind==='naga' || m.kind==='anjing') return;
+    if(m.desc.bomb || m.locked || m.len<2 || m.kind==='naga' || m.kind==='anjing') return;
     const gc = m.cards.find(x=>x.c.joker==='garuda'); if(!gc) return;
     p.hand.forEach(c=>{
       if(c.joker) return;
@@ -846,7 +846,7 @@ E.displaceOptions = displaceOptions;
 E.garudaTargets = function(G,seat){
   const p = G.players[seat]; if(p.passed || G.turnDisplaced) return []; const out = [];
   G.players.forEach(q=>q.tableau.forEach(m=>{
-    if(m.desc.bomb || m.len<2 || m.kind==='naga' || m.kind==='anjing') return;
+    if(m.desc.bomb || m.locked || m.len<2 || m.kind==='naga' || m.kind==='anjing') return;
     if(!m.cards.some(x=>x.c.joker==='garuda')) return;
     let need;
     if(m.kind==='aggregate'){
@@ -869,7 +869,7 @@ E.garudaTargets = function(G,seat){
    trick (bomb, pick up, bomb, pick up...). It resets at the start of every new trick. */
 function pickupTargets(G,seat){
   const out = [];
-  G.players.forEach(q=>{ if(q.seat===seat || q.out) return; q.tableau.forEach(m=>{ if(!m.desc.bomb && (!G.top || m.id!==G.top.id) && m.cards.some(x=>!x.c.joker)) out.push(m); }); });
+  G.players.forEach(q=>{ if(q.seat===seat || q.out) return; q.tableau.forEach(m=>{ if(!m.desc.bomb && !m.locked && (!G.top || m.id!==G.top.id) && m.cards.some(x=>!x.c.joker)) out.push(m); }); });
   return out;
 }
 E.pickupTargets = pickupTargets;
@@ -885,7 +885,7 @@ function pickupOptions(G,seat,mid,ids){
 /* Free Order enumeration: every combination of cards that could possibly form a set. A cheap necessary-condition filter prunes the search
    (one suit with sum <= 21 / one rank / consecutive span / running span / two ranks); describe() still decides legality. */
 function popcnt(x){ x = x - ((x>>>1)&0x55555555); x=(x&0x33333333)+((x>>>2)&0x33333333); return (((x+(x>>>4))&0x0F0F0F0F)*0x01010101)>>>24; }
-function couldBeSet(n,nat,suitMask,rankMask,dup,sum,hasG,hasM){
+function couldBeSet(n,nat,suitMask,rankMask,dup,sum,hasG,hasM,noFH){
   if(nat===0) return false;
   if((suitMask&(suitMask-1))===0 && sum+(hasG?0.5:0)<=21) return true;       /* aggregate */
   if(hasM) return false;                                                      /* Mulai only joins aggregates */
@@ -894,26 +894,106 @@ function couldBeSet(n,nat,suitMask,rankMask,dup,sum,hasG,hasM){
   const minR = 31-Math.clz32(rankMask & -rankMask), maxR = 31-Math.clz32(rankMask);
   if(!dup && maxR-minR+1<=n) return true;                                     /* straight */
   if((n===4||n===6||n===8) && maxR-minR<=(n===8?3:2)) return true;                             /* running pair / triple */
-  if((n>=5&&n<=8) && nr===2) return true;                                   /* full house */
+  if(!noFH && n>=5 && nr>=2) return true;                                   /* full house (describe decides) */
   return false;
 }
-function enumFree(hand,base,minExtra,maxExtra,cb){
+/* With no size cap the search must prune: stop growing a selection that can no longer be part of any set. availMask = ranks present in hand + base; gTot = Garudas available (each fills one gap). */
+/* Can the ranks already chosen still become the groups of a full house? Every chosen rank needs at least 2 cards available, and the group sizes must be able to differ. */
+function fhFeasible(rankMask,cntP,availCnt,gTot){
+  const iv = [];
+  for(let r=1;r<=14;r++){ if(rankMask&(1<<r)){ const hi = availCnt[r] + (gTot>0?1:0); if(hi<2) return false; iv.push([Math.max(cntP[r],2),hi]); } }
+  iv.sort((a,b)=>a[0]-b[0]);
+  const used = new Set(); let ok = true;
+  const pend = iv.slice().sort((a,b)=>a[1]-b[1]);
+  for(const [lo,hi] of pend){ let v = lo; while(used.has(v)) v++; if(v>hi){ ok=false; break; } used.add(v); }
+  return ok;
+}
+function canGrow(nat,suitMask,rankMask,dup,sum,hasG,hasM,availMask,gTot,cntP,availCnt,noFH){
+  if(nat===0) return true;
+  if((suitMask&(suitMask-1))===0 && sum+(hasG?0.5:0)<=21) return true;   /* aggregate */
+  if(hasM) return false;
+  const nr = popcnt(rankMask); if(nr===1) return true;                     /* group */
+  const minR = 31-Math.clz32(rankMask & -rankMask), maxR = 31-Math.clz32(rankMask);
+  if(!dup){ const span = ((1<<(maxR+1))-1) & ~((1<<minR)-1); if(popcnt(span & ~availMask)<=gTot) return true; }   /* straight: every gap fillable */
+  if(!noFH && fhFeasible(rankMask,cntP,availCnt,gTot)) return true;           /* full house */
+  if(maxR-minR<=3) return true;                                           /* running triple / quad */
+  return false;
+}
+function enumFree(hand,base,minExtra,maxExtra,cb,noFH){
   let nat0=0,suit0=0,rank0=0,dup0=false,sum0=0,g0=false,m0=false;
   base.forEach(c=>{ if(c.joker){ if(c.joker==='garuda') g0=true; else if(c.joker==='mulai') m0=true; return; } nat0++; suit0|=1<<c.suit; const b=1<<c.rank; if(rank0&b) dup0=true; rank0|=b; sum0+=c.rank; });
   const N = hand.length, idx = [];
+  let avail = 0, gTot = 0; const availCnt = new Array(16).fill(0), cntP = new Array(16).fill(0);
+  hand.concat(base).forEach(c=>{ if(c.joker){ if(c.joker==='garuda') gTot++; } else { avail |= 1<<c.rank; availCnt[c.rank]++; } });
+  base.forEach(c=>{ if(!c.joker) cntP[c.rank]++; });
   (function rec(start,k,nat,suit,rank,dup,sum,g,m){
-    if(k>=minExtra && couldBeSet(base.length+k,nat,suit,rank,dup,sum,g,m)) cb(idx.slice());
+    if(k>=minExtra && couldBeSet(base.length+k,nat,suit,rank,dup,sum,g,m,noFH)) cb(idx.slice());
     if(k>=maxExtra) return;
     for(let i=start;i<N;i++){
       const c = hand[i]; if(c.joker==='anjing'||c.joker==='naga') continue;
       idx.push(i);
-      if(c.joker) rec(i+1,k+1,nat,suit,rank,dup,sum,g||c.joker==='garuda',m||c.joker==='mulai');
-      else { const b=1<<c.rank; rec(i+1,k+1,nat+1,suit|(1<<c.suit),rank|b,dup||((rank&b)!==0),sum+c.rank,g,m); }
+      if(c.joker){ const g2=g||c.joker==='garuda', m2=m||c.joker==='mulai'; if(canGrow(nat,suit,rank,dup,sum,g2,m2,avail,gTot,cntP,availCnt,noFH)) rec(i+1,k+1,nat,suit,rank,dup,sum,g2,m2); }
+      else { const b=1<<c.rank, r2=rank|b, d2=dup||((rank&b)!==0), s2=sum+c.rank, su2=suit|(1<<c.suit); cntP[c.rank]++; if(canGrow(nat+1,su2,r2,d2,s2,g,m,avail,gTot,cntP,availCnt,noFH)) rec(i+1,k+1,nat+1,su2,r2,d2,s2,g,m); cntP[c.rank]--; }
       idx.pop();
     }
   })(0,0,nat0,suit0,rank0,dup0,sum0,g0,m0);
 }
 E._enumFree = enumFree;
+/* Full houses are generated structurally for the move list (one representative per shape and rank assignment, instead of every suit combination,
+   which explodes with duplicate cards). Returns arrays of hand card ids; each is then checked by playOptions / addOptions. Any selection a player makes
+   by hand is still validated directly (see the fallback in E.respond). */
+function fhSelections(hand,base){
+  const out = [];
+  if(base.some(c=>c.joker && c.joker!=='garuda')) return out;
+  const B = {}; let baseG = false;
+  base.forEach(c=>{ if(c.joker==='garuda') baseG = true; else B[c.rank] = (B[c.rank]||0)+1; });
+  const H = {}; hand.forEach(c=>{ if(!c.joker) (H[c.rank]=H[c.rank]||[]).push(c); });
+  const gHand = baseG ? null : (hand.find(c=>c.joker==='garuda')||null);
+  const special = c => (isStarCard(c)?4:0)+(isTPCard(c)?2:0)+(radVP(c)?1:0)+(arrowVP(c)?1:0);
+  Object.keys(H).forEach(r=>{ H[r].sort((a,b)=>special(a)-special(b)); });
+  const ranks = Array.from(new Set(Object.keys(H).map(Number).concat(Object.keys(B).map(Number)))).sort((a,b)=>b-a);
+  const baseRanks = Object.keys(B).map(Number);
+  const hIdx = new Map(hand.map((c,i)=>[c.id,i])); const seen = new Set();
+  const emit = (cards)=>{ const ids = cards.map(c=>c.id).sort((a,b)=>hIdx.get(a)-hIdx.get(b)); if(!ids.length) return; const k = ids.join(','); if(seen.has(k)) return; seen.add(k); out.push(ids); };
+  const wilds = baseG ? [true] : (gHand ? [false,true] : [false]);
+  wilds.forEach(useW=>{
+    const wildTotal = baseG || useW;
+    const chain = [];   // {r,s,w}
+    const finish = ()=>{
+      if(chain.length<2) return;
+      if(!baseRanks.every(r=>chain.some(g=>g.r===r))) return;
+      if(wildTotal && !chain.some(g=>g.w)) return;
+      if(baseG && !wildTotal) return;
+      const take = chain.map(g=>({r:g.r,n:g.s-(g.w?1:0)-(B[g.r]||0)}));
+      if(take.some(t=>t.n<0 || t.n>(H[t.r]||[]).length)) return;
+      const pick = (order)=>{ const cs = []; take.forEach(t=>{ const arr = (H[t.r]||[]).slice(); if(order==='desc') arr.reverse(); cs.push(...arr.slice(0,t.n)); }); if(useW && !baseG) cs.push(gHand); return cs; };
+      emit(pick('asc')); emit(pick('desc'));
+      /* an all-different-suits version (a full house bomb), when one exists */
+      if(!wildTotal){
+        const used = new Set(base.map(c=>c.suit)); const cs = [];
+        const dfs = (i)=>{ if(i===take.length) return true; const t = take[i]; const arr = H[t.r]||[];
+          const sel = (start,left)=>{ if(left===0) return dfs(i+1); for(let q=start;q<arr.length;q++){ const c = arr[q]; if(used.has(c.suit)) continue; used.add(c.suit); cs.push(c); if(sel(q+1,left-1)) return true; cs.pop(); used.delete(c.suit); } return false; };
+          return sel(0,t.n); };
+        if(dfs(0)) emit(cs);
+      }
+    };
+    const grow = (size)=>{   // choose the next group, of the given size, then continue to size-1 or stop
+      if(size<2) return;
+      ranks.forEach(r=>{
+        if(chain.some(g=>g.r===r)) return;
+        [false,true].forEach(w=>{
+          if(w && (!wildTotal || chain.some(g=>g.w))) return;
+          const nat = size-(w?1:0); const b = B[r]||0; const hv = (H[r]||[]).length;
+          if(nat<b || nat>b+hv || nat<1) return;
+          chain.push({r,s:size,w}); finish(); grow(size-1); chain.pop();
+        });
+      });
+    };
+    const maxTop = Math.min(30, hand.length+base.length);
+    for(let top=3;top<=maxTop;top++){ if(top>2+Math.max(...ranks.map(r=>(B[r]||0)+(H[r]||[]).length+(wildTotal?1:0)))) break; grow(top); }
+  });
+  return out;
+}
 function legalCore(G,seat,ignoreWish){
   const p = G.players[seat]; const hand = p.hand; const acts = [];
   if(p.free){
@@ -924,14 +1004,16 @@ function legalCore(G,seat,ignoreWish){
     enumFree(hand,[],2,G.opts.max,idxs=>{
       const ids = idxs.map(i=>hand[i].id); const r = E.playOptions(G,seat,ids);
       r.options.forEach(o=>acts.push({t:'play',ids,key:o.key,desc:o.desc,label:o.label}));
-    });
+    },true);
+    if(G.opts.e) fhSelections(hand,[]).forEach(ids=>{ const r = E.playOptions(G,seat,ids); r.options.forEach(o=>{ if(o.desc.kind==='fullhouse') acts.push({t:'play',ids,key:o.key,desc:o.desc,label:o.label}); }); });
     if(G.top){
       G.players.forEach(q=>q.tableau.forEach(m=>{
         if(!addable(m,G)) return;
         enumFree(hand,m.cards.map(x=>x.c),1,G.opts.max-m.len,idxs=>{
           const ids = idxs.map(i=>hand[i].id); const r = E.addOptions(G,seat,m.id,ids);
           r.options.forEach(o=>acts.push({t:'add',meldId:m.id,ids,key:o.key,desc:o.desc,label:'Add to '+(G.players[m.owner].name)+"'s set → "+o.label}));
-        });
+        },true);
+        if(G.opts.e) fhSelections(hand,m.cards.map(x=>x.c)).forEach(ids=>{ const r = E.addOptions(G,seat,m.id,ids); r.options.forEach(o=>{ if(o.desc.kind==='fullhouse') acts.push({t:'add',meldId:m.id,ids,key:o.key,desc:o.desc,label:'Add to '+(G.players[m.owner].name)+"'s set → "+o.label}); }); });
       }));
     }
   }
@@ -979,8 +1061,21 @@ E.legal = function(G,seat){
 
 function resetPasses(G){ G.players.forEach(p=>p.passed=false); G.passOrder=[]; }
 function payStar(G,p,cards){ let t=0; cards.forEach(c=>t+=starVP(c)); if(G.starDbl) t*=2; p.hv.star+=t; return t; }
+const LOCK_MIN = 7, LOCK_BONUS = 30;
+/* A set of 7+ cards with no Garuda, naga or anjing can be locked by the player who just played or added to it: +30 VP now (15 owner / 15 locker if different). */
+function canLock(meld){ return !!meld && !meld.locked && meld.len>=LOCK_MIN && meld.kind!=='naga' && meld.kind!=='anjing' && !meld.cards.some(x=>x.c.joker==='garuda'); }
+E.displaceLockable = (G,meldId) => { const m = G.players.flatMap(q=>q.tableau).find(x=>x.id===meldId); return !!m && !m.locked && m.len>=LOCK_MIN && m.cards.filter(x=>x.c.joker==='garuda').length===1; };
+E.canLockDesc = d => !!d && d.len>=LOCK_MIN && d.kind!=='naga' && d.kind!=='anjing' && !d.cards.some(c=>c.joker==='garuda');
+function lockMeld(G,seat,meld){
+  if(!canLock(meld)) return false;
+  meld.locked = true; meld.lockedBy = seat;
+  const o = G.players[meld.owner], l = G.players[seat];
+  if(meld.owner!==seat){ o.hv.bomb += LOCK_BONUS/2; l.hv.bomb += LOCK_BONUS/2; log(G,l.name+' locks '+o.name+"'s "+meld.len+'-card set: '+o.name+' and '+l.name+' score '+(LOCK_BONUS/2)+' VP each.','imp'); }
+  else { o.hv.bomb += LOCK_BONUS; log(G,l.name+' locks the '+meld.len+'-card set: +'+LOCK_BONUS+' VP.','imp'); }
+  return true;
+}
 function newMeld(G,owner,d){
-  return {id:++G.mid,owner,kind:d.kind,len:d.len,desc:d,cards:d.cards.map(c=>({c,adder:owner}))};
+  return {id:++G.mid,owner,kind:d.kind,len:d.len,desc:d,cards:d.cards.map(c=>({c,adder:owner})),locked:false,lockedBy:null};
 }
 function removeFromHand(p,ids){ p.hand = p.hand.filter(c=>!ids.includes(c.id)); }
 
@@ -1036,6 +1131,7 @@ function applyTurn(G,seat,a){
     const old = m.cards.slice();
     m.desc = ds[0]; m.len = ds[0].len;
     m.cards = ds[0].cards.map(cc=>{ const prev = old.find(x=>x.c.id===cc.id); return {c:cc,adder:prev?prev.adder:seat}; });
+    if(a.lock) lockMeld(G,seat,m);   /* displacing the Garuda out of a 7+ card set lets the displacer lock it */
     payStar(G,p,[c]);
     p.hand = p.hand.filter(x=>x.id!==c.id);
     const ord = a.order || E.autoOrder(p.hand,[gcard]);
@@ -1053,8 +1149,17 @@ function applyTurn(G,seat,a){
     let found;
     if(a.t==='play') found = list.find(x=>x.t==='play' && x.key===a.key && x.ids.join()===a.ids.join());
     else found = list.find(x=>x.t==='add' && x.meldId===a.meldId && x.key===a.key && x.ids.join()===a.ids.join());
+    if(!found && p.free && Array.isArray(a.ids)){
+      /* a hand-picked selection that is legal but not among the representative full houses in the move list */
+      const forcedW = !!(lg.forced && G.wish); const hasWish = a.ids.some(id=>{ const c = byId(p.hand,id); return c && !c.joker && c.rank===G.wish; });
+      if(!(forcedW && !hasWish)){
+        if(a.t==='play'){ const r = E.playOptions(G,seat,a.ids); const o = r.options.find(x=>x.key===a.key); if(o && o.desc.kind==='fullhouse') found = {t:'play',ids:a.ids,key:o.key,desc:o.desc,label:o.label}; }
+        else if(G.top){ const r = E.addOptions(G,seat,a.meldId,a.ids); const o = r.options.find(x=>x.key===a.key); if(o && o.desc.kind==='fullhouse') found = {t:'add',meldId:a.meldId,ids:a.ids,key:o.key,desc:o.desc,label:o.label}; }
+      }
+    }
     if(!found){
       if(a.t==='play'){ const r = E.playOptions(G,seat,a.ids); if(r.options.length && G.wish && G.top) return {ok:false,err:'A wish forces you to play the wished rank ('+RSHORT[G.wish]+').'}; return {ok:false,err:r.err||'Illegal play.'}; }
+      if(G.wish && G.top && lg.forced){ const ro = E.addOptions(G,seat,a.meldId,a.ids); if(ro.options.length) return {ok:false,err:'A wish forces you to play the wished rank ('+RSHORT[G.wish]+'). Adding to a set does not count unless your cards include a '+RSHORT[G.wish]+'.'}; }
       return {ok:false,err:'Illegal addition.'};
     }
     const cards = a.ids.map(id=>byId(p.hand,id));
@@ -1070,7 +1175,7 @@ function applyTurn(G,seat,a){
     let meld;
     if(a.t==='play'){
       if(d.kind!=='anjing') p.declOpen = false;   /* playing a set onto your own tableau closes the declaration window (the Anjing does not) */
-      meld = newMeld(G,seat,d); p.tableau.push(meld); if(d.bomb && d.len===G.opts.max) meld.completedBy = seat;
+      meld = newMeld(G,seat,d); p.tableau.push(meld);
       log(G,p.name+' plays '+d.label+'.');
     } else {
       meld = findMeld(G,a.meldId);
@@ -1082,6 +1187,7 @@ function applyTurn(G,seat,a){
     payStar(G,p,cards);
     removeFromHand(p,a.ids);
     G.turnDisplaced=false;
+    if(a.lock) lockMeld(G,seat,meld);
     /* A pass only lasts until someone plays: any play (bomb or not) makes every passed player active again. The trick ends when everyone else has passed since the last play. */
     G.players.forEach(q=>q.passed=false); G.passOrder = G.passOrder.filter(x=>x!==seat);
     if(d.kind==='anjing'){
@@ -1142,15 +1248,10 @@ function afterAction(G,seat,passed){
 /* ═══ GOING OUT ═══ */
 function discardTableau(G,p,opts){
   /* opts.rad: charge radioactive; always pay TP, Arrow (non-solo). Returns the number of cards discarded.
-     A discarded max-size bomb scores 30 VP (15 + 15 with whoever completed it, if another player) and its ☢ cards score nothing. */
+     The 30 VP lock bonus is paid at lock time; the ☢ cards of a locked set score nothing. */
   let cnt = 0;
   p.tableau.forEach(m=>{
-    const six = m.desc.bomb && m.cards.length===G.opts.max;   /* max-size bomb (4 at 2-4P, 5 at 5P, ... 8 at 8P) */
-    if(six){
-      const cb = m.completedBy;
-      if(cb!=null && cb!==p.seat){ p.hv.bomb += 15; G.players[cb].hv.bomb += 15; log(G,G.opts.max+'-card bomb! '+p.name+' and '+G.players[cb].name+' score 15 VP each.','imp'); }
-      else { p.hv.bomb += 30; log(G,G.opts.max+'-card bomb! '+p.name+' scores 30 VP.','imp'); }
-    }
+    const six = !!m.locked;   /* locked sets: their radioactive cards score nothing (the lock bonus was paid when the set was locked) */
     m.cards.forEach(x=>{
       const c = x.c; cnt++;
       p.hv.tp += tpVP(c);
@@ -1255,13 +1356,13 @@ function cannOptions(G,seat){
   const out = []; const pd = G.pending;
   pd.targets.forEach(t=>{
     const q = G.players[t]; if(q.out) return;
-    q.tableau.forEach(m=>{ if(m.desc.bomb) return; m.cards.forEach(x=>{ const c = x.c; if(!c.joker && !isStarCard(c)) out.push({target:t,cardId:c.id,rank:c.rank,card:c,count:1}); }); });
+    q.tableau.forEach(m=>{ if(m.desc.bomb || m.locked) return; m.cards.forEach(x=>{ const c = x.c; if(!c.joker && !isStarCard(c)) out.push({target:t,cardId:c.id,rank:c.rank,card:c,count:1}); }); });
   });
   return out;
 }
 function retrOptions(G,seat){
   const p = G.players[seat]; const out = [];
-  p.tableau.forEach(m=>{ if(m.desc.bomb) return; m.cards.forEach(x=>{ const c = x.c; if(c.joker==='garuda' || (!c.joker && !isStarCard(c) && !isTPCard(c))) out.push(c); }); });
+  p.tableau.forEach(m=>{ if(m.desc.bomb || m.locked) return; m.cards.forEach(x=>{ const c = x.c; if(c.joker==='garuda' || (!c.joker && !isStarCard(c) && !isTPCard(c))) out.push(c); }); });
   return out;
 }
 E.cannOptions = cannOptions; E.retrOptions = retrOptions;
@@ -1453,7 +1554,7 @@ function scoreAction(G,seat,a,level,ctx){
   const spend = d.bomb ? 8 : (d.kind==='naga'?7:(d.kind==='single'?d.rankKey*0.25:d.kind==='group'?d.rankKey*0.2:d.kind==='fullhouse'?(d.mainRank+(d.mainN-3)*2)*0.2:d.kind==='aggregate'?d.rankKey*0.1:(G.opts.stHigh?d.start:14-d.start)*0.15));
   const topLen = G.top?G.top.len:0; const needy = ctx.ownCards===0;
   sc -= spend*(needy?0.4:1);
-  if(d.bomb && d.len===G.opts.max) sc += (a.t==='add' && G.players.flatMap(q=>q.tableau).find(x=>x.id===a.meldId).owner!==seat) ? 9 : 18;   /* 6-card bomb bonus (30 VP, 15 each if completed by another player) */
+  if(E.canLockDesc(d)) sc += (a.t==='add' && G.players.flatMap(q=>q.tableau).find(x=>x.id===a.meldId).owner!==seat) ? 9 : 18;   /* lock bonus (30 VP, 15 each if locked on another player's set) */
   if(d.bomb && !goesOut && !(hand.length<=6 || topLen>=3 || ctx.someoneNearOut)) sc -= 10;
   if(d.kind==='naga' && !ctx.someoneNearOut && hand.length>5) sc -= 6;
   /* keep the remaining hand adjacent-friendly */
@@ -1483,7 +1584,7 @@ AI.turn = function(G,seat){
   /* displace: only take a Garuda out of my own / a teammate's set */
   if(level!=='easy' && lg.displace.length){
     const d = lg.displace.find(x=>{ const m=G.players.flatMap(q=>q.tableau).find(mm=>mm.id===x.meldId); return m && sameTeam(G,seat,m.owner); });
-    if(d) return {t:'displace',meldId:d.meldId,garudaId:d.garudaId,cardId:d.cardId};
+    if(d) return {t:'displace',meldId:d.meldId,garudaId:d.garudaId,cardId:d.cardId,lock:E.displaceLockable(G,d.meldId)};
   }
   let acts = lg.actions;
   if(p.free) acts = E.dedupeActions(G,seat,acts);
@@ -1528,8 +1629,19 @@ AI.turn = function(G,seat){
     const tg = E.leadTargets(G,seat);
     if(tg.length){ tg.sort((x,y)=>G.players[x].hand.length-G.players[y].hand.length); return {t:'play',ids:best.ids,key:best.key,leadTo:tg[0]}; }   /* hand the lead to the teammate closest to going out */
   }
-  return best.t==='play'?{t:'play',ids:best.ids,key:best.key}:{t:'add',meldId:best.meldId,ids:best.ids,key:best.key};
+  const lk = E.canLockDesc(best.desc);
+  return best.t==='play'?{t:'play',ids:best.ids,key:best.key,lock:lk}:{t:'add',meldId:best.meldId,ids:best.ids,key:best.key,lock:lk};
 };
+
+/* The AI always locks a set when it can (+30 VP). */
+(function(){ const base = AI.turn; AI.turn = function(G,seat){
+  const r = base(G,seat);
+  if(r && (r.t==='play'||r.t==='add') && r.lock===undefined){
+    const m = r.t==='add' ? G.players.flatMap(q=>q.tableau).find(x=>x.id===r.meldId) : null;
+    if(r.ids.length+(m?m.len:0)>=5){ const a = E.legal(G,seat).actions.find(x=>x.t===r.t && x.key===r.key && x.ids.join()===r.ids.join() && (r.t==='play'||x.meldId===r.meldId)); r.lock = !!(a && E.canLockDesc(a.desc)); }
+  }
+  return r;
+}; })();
 
 /* ── Declarations (Laoda / Pinyin) ── */
 AI.declare = function(G,seat){
@@ -1952,7 +2064,7 @@ const JLET = {naga:'Na',garuda:'Ga',mulai:'0',anjing:'An'};
 const RK = {1:'A'};
 const rk = r => RK[r]||String(r);
 const $ = id => document.getElementById(id);
-const S = {G:null,viewSeat:null,sel:[],timer:null,nHumans:1,setup:{n:4,level:'medium',sets:{a:1,b:1,c:1,d:0,e:0},dupSets:[],freeze:0,target:700,teamMode:0,handOrder:'free',pickups:0,majors:0,vpMode:'bzf',straights:'low'},cur:null,lastMsg:0};
+const S = {G:null,viewSeat:null,sel:[],timer:null,nHumans:1,setup:{n:4,level:'medium',sets:{a:1,b:1,c:1,d:0,e:0},dupSets:[],freeze:0,target:700,teamMode:0,handOrder:'free',majors:0,vpMode:'bzf',straights:'low'},cur:null,lastMsg:0};
 const FAST = ()=>!!window.__fast;
 
 /* ── SETUP ── */
@@ -1975,7 +2087,6 @@ function initSetup(){
   bindGroup('ft-group',b=>{ S.setup.teamMode=+b.dataset.v; S.setup.freeze=+b.dataset.v; });
   bindGroup('ho-group',b=>{ S.setup.handOrder=b.dataset.v; });
   bindGroup('st-group',b=>{ S.setup.straights=b.dataset.v; });
-  bindGroup('pu-group',b=>{ S.setup.pickups=+b.dataset.v; });
   bindGroup('ma-group',b=>{ S.setup.majors=+b.dataset.v; });
   bindGroup('sc-group',b=>{ S.setup.vpMode=b.dataset.v; syncMajorGate(); });
   syncMajorGate();
@@ -2007,7 +2118,7 @@ function syncMajorGate(){
 function startGame(names,human,n){
   const sets=S.setup.sets;
   S.nHumans = S.net?1:human.filter(x=>x).length;
-  S.G = E.newGame({n,names,human,level:S.setup.level,opts:{a:!!sets.a,b:!!sets.b,c:!!sets.c,d:!!sets.d,e:!!sets.e},dupSets:S.setup.dupSets.slice(),target:S.setup.target,freezeTeams:S.setup.teamMode===1,allSolo:S.setup.teamMode===2,handOrder:S.setup.handOrder,pickups:S.setup.pickups===1,vpMode:S.setup.vpMode,majors:S.setup.majors===1,straights:S.setup.straights,seed:(Date.now()%2147483647)});
+  S.G = E.newGame({n,names,human,level:S.setup.level,opts:{a:!!sets.a,b:!!sets.b,c:!!sets.c,d:!!sets.d,e:!!sets.e},dupSets:S.setup.dupSets.slice(),target:S.setup.target,freezeTeams:S.setup.teamMode===1,allSolo:S.setup.teamMode===2,handOrder:S.setup.handOrder,vpMode:S.setup.vpMode,majors:S.setup.majors===1,straights:S.setup.straights,seed:(Date.now()%2147483647)});
   S.viewSeat = human.findIndex(x=>x); S.sel=[];
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $('game-screen').classList.add('active');
   E.startHand(S.G); drive();
@@ -2030,12 +2141,12 @@ function meldHTML(m,G,o){
     const rank = c => c.joker==='garuda' ? d.garudaAs : c.rank; const groups={}; cs.forEach(c=>{ (groups[rank(c)]=groups[rank(c)]||[]).push(c); });
     body='<div class="cols">'+Object.keys(groups).sort((a,b)=>b-a).map(r=>'<div class="col">'+groups[r].map(c=>cardHTML(c,{sm:true})).join('')+'</div>').join('')+'</div>';
   } else if(m.kind==='fullhouse'){
-    const rank = c => c.joker==='garuda' ? d.garudaAs : c.rank; const main=cs.filter(c=>rank(c)===d.mainRank), pair=cs.filter(c=>rank(c)!==d.mainRank);
-    body='<div style="display:flex;gap:8px"><div class="strip">'+main.map(c=>cardHTML(c,{sm:true})).join('')+'</div><div class="strip">'+pair.map(c=>cardHTML(c,{sm:true})).join('')+'</div></div>';
+    const rank = c => c.joker==='garuda' ? d.garudaAs : c.rank;
+    body='<div style="display:flex;gap:8px;flex-wrap:wrap">'+d.groups.map(g=>'<div class="strip">'+cs.filter(c=>rank(c)===g.rank).map(c=>cardHTML(c,{sm:true})).join('')+'</div>').join('')+'</div>';
   } else body='<div class="strip">'+cs.map(c=>cardHTML(c,{sm:true})).join('')+'</div>';
   const base = d.label.split(' — ')[0];
-  const cls=['meld']; if(G.top&&G.top.id===m.id) cls.push('top'); if(d.bomb) cls.push('bomb'); if(o.addable) cls.push('addable');
-  return '<div class="'+cls.join(' ')+'" data-mid="'+m.id+'"><div class="ml">'+(G.top&&G.top.id===m.id?'<b>TOP</b> ':'')+base+(d.bomb?' <span class="bm">BOMB</span>':'')+(m.bombedBy!=null?' <span class="bm">→ Arrow to '+esc(G.players[m.bombedBy].name)+'</span>':'')+'</div>'+body+'</div>';
+  const cls=['meld']; if(G.top&&G.top.id===m.id) cls.push('top'); if(d.bomb) cls.push('bomb'); if(m.locked) cls.push('locked'); if(o.addable) cls.push('addable');
+  return '<div class="'+cls.join(' ')+'" data-mid="'+m.id+'"><div class="ml">'+(G.top&&G.top.id===m.id?'<b>TOP</b> ':'')+base+(d.bomb?' <span class="bm">BOMB</span>':'')+(m.locked?' <span class="bm" title="Locked: no additions, no cards can be taken">🔒 LOCKED</span>':'')+(m.bombedBy!=null?' <span class="bm">→ Arrow to '+esc(G.players[m.bombedBy].name)+'</span>':'')+'</div>'+body+'</div>';
 }
 function teamBadge(p,G){ if(G.allSolo) return ''; if(p.solo) return '<span class="badge solo">Solo</span>'; if(G.n>=3 || G.n===2) return '<span class="badge t'+(p.team===2?2:1)+'">'+(G.n===2?('Side '+p.team):(p.team===2?'Red':'Blue'))+'</span>'; return ''; }
 function playerHead(p,G){
@@ -2103,10 +2214,17 @@ function renderActions(){
     (bombPlays(lg,ht.seat).length?'<button class="abtn sec" id="btn-bomb">Bomb</button>':'')+
     (lg.displace.length?'<button class="abtn sec" id="btn-disp">Displace Garuda</button>':'')+
     E.declOptions(G,ht.seat).map(k=>'<button class="abtn sec" data-decl="'+k+'" title="'+(k==='laoda'?'Declare that you will go out 1st: +50 VP to your team if you do, -50 if you fail':'Declare that you will go out: +25 VP to your team if you do, -25 if you fail')+'">'+(k==='laoda'?'Laoda':'Pinyin')+'</button>').join('')+
-    E.maOptions(G,ht.seat).map(c=>'<button class="abtn sec" data-ma="'+c.id+'" title="'+esc(E.maDesc(c))+'">Play '+esc(c.name)+(c.key==='star'?'':' (+'+E.maPayout(G,c)+'★)')+'</button>').join('')+
+    E.maOptions(G,ht.seat).map(c=>'<button class="abtn sec" data-ma="'+c.id+'" title="'+esc(c.name+': '+E.maDesc(c))+'">Play Major '+E.maNum(c)+'</button>').join('')+
     '<button class="abtn sec" id="btn-clear"'+(S.sel.length?'':' disabled')+'>Clear</button>';
   a.querySelectorAll('[data-decl]').forEach(b=>b.onclick=()=>{ const keep=S.sel.slice(); if(send({t:'declare',kind:b.dataset.decl})){ S.sel=keep; render(); } });
-  a.querySelectorAll('[data-ma]').forEach(b=>b.onclick=()=>{ const keep=S.sel.slice(); if(send({t:'major',id:+b.dataset.ma})){ S.sel=keep; render(); } });   /* a Major is a free action: keep any cards already selected */
+  a.querySelectorAll('[data-ma]').forEach(b=>b.onclick=()=>{
+    const G=S.G, c=E.maOptions(G,ht.seat).find(x=>x.id===+b.dataset.ma); if(!c) return;
+    let res; if(c.key==='star') res='Right now: no Star VP are scored by this card itself. It only doubles the Star VP scored for the rest of this trick.'; else { const pay=E.maPayout(G,c); const n=pay/5; res='Right now it counts <b>'+n+(c.key==='cosmos'?' different suit':' '+E.SUITS[c.suit]+' card')+(n===1?'':'s')+'</b> on all tableaus, so you would score <b>+'+pay+'★</b>.'; }
+    modal('<h3>Play Major '+E.maNum(c)+': '+esc(c.name)+'?</h3><p>'+esc(E.maDesc(c))+'.</p><p>'+res+'</p><p style="color:var(--text3);font-size:.85rem">It is used up once played, and you can play only one Major per trick.</p><button class="mopt" id="ma-yes">Play it</button><button class="mopt" id="ma-no">Cancel</button>',el=>{
+      el.querySelector('#ma-no').onclick=()=>closeModal();
+      el.querySelector('#ma-yes').onclick=()=>{ closeModal(); const keep=S.sel.slice(); if(send({t:'major',id:c.id})){ S.sel=keep; render(); } };
+    });
+  });   /* a Major is a free action: keep any cards already selected */
   $('btn-play').onclick=doPlay; $('btn-pass').onclick=()=>send({t:'pass'}); $('btn-clear').onclick=()=>{ S.sel=[]; render(); };
   $('btn-hint').onclick=hintModal;
   const bb=$('btn-bomb'); if(bb) bb.onclick=bombModal;
@@ -2151,10 +2269,17 @@ function bombModal(){
     el.querySelectorAll('.hrow').forEach(b=>b.onclick=()=>bombConfirm(list[+b.dataset.k]));
   });
 }
+function sendLockable(base,desc){
+  if(!E.canLockDesc(desc)){ send(base); return; }
+  modal('<h3>Lock this set?</h3><p>This set will have <b>'+desc.len+' cards</b>. Locking it scores <b>+30 VP now</b> (15 to the owner and 15 to you if it is not your set). A locked set cannot be added to, and none of its cards can be taken. Its radioactive cards score nothing.</p><button class="mopt" id="lk-yes">Lock it (+30 VP)</button><button class="mopt" id="lk-no">Keep it open</button>',el=>{
+    el.querySelector('#lk-yes').onclick=()=>{ closeModal(); send(Object.assign({},base,{lock:true})); };
+    el.querySelector('#lk-no').onclick=()=>{ closeModal(); send(Object.assign({},base,{lock:false})); };
+  });
+}
 function bombConfirm(a){
   const ht=humanTurn(); if(!ht) return; const p=S.G.players[ht.seat];
   modal('<h3>Play this bomb?</h3><div class="strip" style="justify-content:center;margin:6px 0 8px">'+a.ids.map(id=>cardHTML(p.hand.find(c=>c.id===id),{sm:true})).join('')+'</div><p><b>'+esc(a.label.replace(' — BOMB (','  ·  bomb: ').replace(')',''))+'</b></p><button class="mopt" id="bomb-yes">Play bomb</button><button class="mopt" id="bomb-no">Cancel</button>',el=>{
-    el.querySelector('#bomb-yes').onclick=()=>{ closeModal(); send({t:'play',ids:a.ids.slice(),key:a.key}); };
+    el.querySelector('#bomb-yes').onclick=()=>{ closeModal(); sendLockable({t:'play',ids:a.ids.slice(),key:a.key},a.desc); };
     el.querySelector('#bomb-no').onclick=()=>bombModal();
   });
 }
@@ -2210,20 +2335,29 @@ function doPlay(){
   chooser('Choose how to play these cards',r.options.map(o=>({label:o.label,fn:()=>{
     if(o.desc.kind==='anjing' && tg.length){
       chooser('Who leads next?',[{label:'Next player (as usual)',fn:()=>send({t:'play',ids,key:o.key})}].concat(tg.map(s=>({label:'Pass the lead to '+S.G.players[s].name,fn:()=>send({t:'play',ids,key:o.key,leadTo:s})}))),true);
-    } else send({t:'play',ids,key:o.key});
+    } else sendLockable({t:'play',ids,key:o.key},o.desc);
   }})),true);
 }
 function doAdd(mid){
   const ht=humanTurn(); if(!ht||!S.sel.length) return;
   const r=E.addOptions(S.G,ht.seat,mid,S.sel); if(!r.options.length){ toast(r.err); return; }
   const ids=S.sel.slice();
-  chooser('Choose how to add these cards',r.options.map(o=>({label:o.label,fn:()=>send({t:'add',meldId:mid,ids,key:o.key})})),true);
+  chooser('Choose how to add these cards',r.options.map(o=>({label:o.label,fn:()=>sendLockable({t:'add',meldId:mid,ids,key:o.key},o.desc)})),true);
 }
 function doDisplace(){
   const ht=humanTurn(); if(!ht) return; const lg=E.legal(S.G,ht.seat);
   chooser('Displace a Garuda',lg.displace.map(d=>({label:d.label,fn:()=>{
     const p=S.G.players[ht.seat]; const base=p.hand.filter(c=>c.id!==d.cardId); const g=S.G.players.flatMap(q=>q.tableau).flatMap(m=>m.cards).map(x=>x.c).find(c=>c.id===d.garudaId);
-    placeCards(base,[g],order=>send({t:'displace',meldId:d.meldId,garudaId:d.garudaId,cardId:d.cardId,order}));
+    placeCards(base,[g],order=>{
+      const act={t:'displace',meldId:d.meldId,garudaId:d.garudaId,cardId:d.cardId,order};
+      if(E.displaceLockable(S.G,d.meldId)){
+        const m=S.G.players.flatMap(q=>q.tableau).find(x=>x.id===d.meldId);
+        modal('<h3>Lock this set?</h3><p>Once the Garuda is replaced this set has <b>'+m.len+' cards</b>. Locking it scores <b>+30 VP now</b> (15 to the owner and 15 to you if it is not your set). A locked set cannot be added to, and none of its cards can be taken. Its radioactive cards score nothing.</p><button class="mopt" id="lk-yes">Lock it (+30 VP)</button><button class="mopt" id="lk-no">Keep it open</button>',el=>{
+          el.querySelector('#lk-yes').onclick=()=>{ closeModal(); send(Object.assign({},act,{lock:true})); };
+          el.querySelector('#lk-no').onclick=()=>{ closeModal(); send(Object.assign({},act,{lock:false})); };
+        });
+      } else send(act);
+    });
   }})),true);
 }
 
@@ -2358,13 +2492,13 @@ function help(){
   '<p><b>Scoring mode.</b> Chosen at setup. BZF: cards score Star, Arrow and Radioactive VP. TP: cards score Tokoh Points only. BZF + TP: both sets score. None: no card VP; going out 1st / 2nd / 3rd scores +100 / +75 / +50 instead. Cards that score nothing in the chosen mode are ordinary cards, and only the scored markers are shown. Team and solo bonuses, the nothing-on-table penalty and the 6-card bomb bonus apply in every mode.</p>'+
   '<p><b>Goal.</b> Go out and pile up card VP. Going out has no bonus of its own, except a solo who goes out gets a flat 50 VP. Team bonuses go to everyone on a team: +25 for each teammate who goes out, plus +25 more if they went out in sequence (1-2, 2-3 or 1-2-3). Two teammates out is 50 each (75 in sequence); 1-2-3 is 100 each. The hand ends after 1 (2P), 2 (3P) or 3 (4-6P) players go out.</p>'+
   '<p><b>Hand order.</b> Free Order (default): hands stay sorted by rank (jokers at the right end) and you can select any cards in your hand, not only adjacent ones. Frozen: your hand stays in dealt order and you can only play cards that sit next to each other; select a run of adjacent cards and tap Play. 1 Time Reorder: your starting hand is sorted once, then frozen.</p>'+
-  '<p><b>Sets.</b> Bombs beat everything, then more cards beat fewer. At equal length: running quad (8 suits), running triple, running pair, full house (triple + pair; quad + pair at 6+ suits; quad + triple or pentad + pair at 7+; pentad + triple at 8; the bigger group is stronger, then the higher rank; off by default), straight (lower wins), group (higher wins), aggregate (same suit, ranks total 21 or less, higher wins). Naga is always played alone, but tops any non-bomb set on the table, of any type or size.</p>'+
+  '<p><b>Sets.</b> Bombs beat everything, then more cards beat fewer. At equal length: running quad (8 suits), running triple, running pair, full house (2 or more groups of different ranks, each one card smaller than the last, the smallest at least 2: 3+2, 4+3, 4+3+2, 5+4 and so on; the bigger top group is stronger, then the higher rank; off by default), straight (lower wins), group (higher wins), aggregate (same suit, ranks total 21 or less, higher wins). Naga is always played alone, but tops any non-bomb set on the table, of any type or size.</p>'+
   '<p><b>Bomb button.</b> When you hold a bomb you can play right now, a Bomb button appears next to Hint. It lists every playable bomb, strongest first. Tap one, then choose Play bomb or Cancel.</p>'+
   '<p><b>Adding.</b> Tap a green set to add cards to anyone’s set if that makes it the top set. Cards you add belong to the set’s owner; you keep only the Star VP. Your last cards must go on your own tableau.</p>'+
   '<p><b>Passing</b> only lasts until someone plays: after any play (a bomb or not), everyone who passed may play again on their next turn. Passing is not allowed on a singleton set (a single card or an aggregate) while you can play a single card on it, as long as every set on the table is a singleton set; you may play a bigger set instead. Once a non-singleton set has been played this trick, you may pass. When everyone else has passed since the last play, the trick ends: players other than the top-set holder and last-card player pay a flat 5 VP if they have no cards on their tableau at all, passers may cannibalize one card from those two tableaus, everyone may retrieve one card, ☢ is charged, and everything is discarded.</p>'+
   '<p><b>Mulai.</b> The lowest-VP player holds it and starts. Playing it makes a wish for a rank — whoever can next play that rank must, until someone does.</p>'+
-  '<p><b>Max-size bombs</b> (as many cards as there are suits in play: 4 at 2–4 players, 5 at 5, and so on up to 8) score 30 VP when discarded (15 each for the owner and the player who completed it, if another player did), and their ☢ cards score nothing.</p><p><b>Team modes.</b> All Solo makes every player their own team: every player&#39;s Arrow is pooled together across the whole table, and the full pool is shared in full by every player who goes out that hand. If a player does not go out, they get none of the pool, even though their own discards contributed to it.</p><p><b>VP.</b> If a bomb tops the Naga, the bomb’s owner takes the Naga’s +25 Arrow instead of the Naga’s owner. Star pays when played. TP pays when discarded. Arrow is pooled per team, and at hand end every teammate receives the full pool. Solos (the top scorers) earn no Arrow but do pay ☢. Cards left in hand cost nothing.</p>'+
-  '<p style="color:var(--text3)">Ranks: A = Ace (1), then 2–14 (11 Page, 12 Knight, 13 Queen, 14 King). Jokers: Na Naga, Ga Garuda, 0 Mulai (rank 0), An Anjing. Card marks: ★ Star, ▲ Arrow, ▼ negative Arrow (King), ☢ radioactive, TP Tokoh Points.</p></div><button class="mopt" onclick="UI.close()">Close</button>');
+  '<p><b>Locking.</b> When a set reaches 7 or more cards (and holds no Garuda), the player who just played or added to it, or who just displaced its Garuda, may lock it for 30 VP, scored at once (15 each for the owner and the locker if they are different players). A locked set accepts no additions and none of its cards can be taken (cannibalize, retrieve or Pick Up), and its ☢ cards score nothing.</p><p><b>Team modes.</b> All Solo makes every player their own team: every player&#39;s Arrow is pooled together across the whole table, and the full pool is shared in full by every player who goes out that hand. If a player does not go out, they get none of the pool, even though their own discards contributed to it.</p><p><b>VP.</b> If a bomb tops the Naga, the bomb’s owner takes the Naga’s +25 Arrow instead of the Naga’s owner. Star pays when played. TP pays when discarded. Arrow is pooled per team, and at hand end every teammate receives the full pool. Solos (the top scorers) earn no Arrow but do pay ☢. Cards left in hand cost nothing.</p>'+
+  '<p style="color:var(--text3)">Ranks: A = Ace (1), then 2–14 (11 Page, 12 Knight, 13 Queen, 14 King). Jokers: Na Naga, Ga Garuda, 0 Mulai (rank 0), An Anjing. Card marks: ★ Star, ▲ Arrow, ▼ negative Arrow (King), ☢ radioactive, TP Tokoh Points.</p><p style="color:var(--text3);font-size:.8rem">© 2026 Ruben Zurita Ojeda. All rights reserved.</p></div><button class="mopt" onclick="UI.close()">Close</button>');
 }
 
 document.addEventListener('DOMContentLoaded',initSetup);
